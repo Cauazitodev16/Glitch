@@ -1,11 +1,16 @@
+console.log("script carregou");
+
 function toggleTheme() {
     document.body.classList.toggle("light");
 
     const logo = document.getElementById("logo");
+    const btn = document.getElementById("themeBtn");
 
-    if (document.body.classList.contains("light")) {
-        logo.src = "assets/logo-glitch-light.png";
-    } else {
-        logo.src = "assets/logo-glitch.png";
-    }
+    const isLight = document.body.classList.contains("light");
+
+    logo.src = isLight
+        ? "assets/logo-glitch-light.png"
+        : "assets/logo-glitch.png";
+
+    btn.textContent = isLight ? "🌙" : "🔅";
 }

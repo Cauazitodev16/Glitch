@@ -11,7 +11,7 @@ body.light {
     --subtext: #444444;
     --button: #6c2bd9;
 }
-body.light .logo {
+body.light.logo {
     filter: invert(1);
 }
 body{
@@ -40,6 +40,26 @@ body{
     margin: 0 auto 20px;
 }
 
+.logo-fundo{
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 350px;
+    
+    pointer-events: none;
+}
+
+.logo-fundo2{
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 350px;
+    
+    pointer-events: none;
+}
+
 
 h1{
     font-size:3rem;
@@ -62,8 +82,29 @@ button{
     font-weight:bold;
 }
 
+#themeBtn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+
+    padding: 10px 16px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+
+    background: var(--button);
+    color: white;
+    font-weight: bold;
+
+    transition: all 0.3s ease;
+}
+
+#themeBtn:hover {
+    transform: scale(1.05);
+}
+
 .login-cadastro-container{
-    display:flex;
+    display:Inside;
     align-items: center;
     gap:20px;
     margin-top:30px;
