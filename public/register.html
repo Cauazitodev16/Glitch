@@ -1,27 +1,62 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
-    <title>Registre-se</title>
+
+    <title>Glitch - Cadastro</title>
+
+    <link rel="stylesheet" href="css/login.css">
 </head>
-    
+
 <body>
-    <div class="login-cadastro-container">
-        <h1>ℂ𝕣𝕚𝕖 𝕤𝕦𝕒 𝕔𝕠𝕟𝕥𝕒</h1>
-        <p>Preencha os campos para criar sua conta no Glitch.</p>
-        <form>
-            <input type="text" placeholder="Nome completo" required>
 
-            <input type="email" placeholder="Endereço de email" required>
+    <div class="login-container">
 
-            <input type="password" placeholder="Senha" required>
+        <img src="assets/logo-glitch.png"
+             id="logo"
+             class="logo">
 
-            <button type="submit">ℂ𝕣𝕚𝕒𝕣 𝕔𝕠𝕟𝕥𝕒</button>
-        </form>
-        
-        <p>Já tem uma conta? <a href="index.html">Faça login</a></p>
+        <img src="assets/logo-glitch-fundo.png"
+             id="logo-fundo"
+             class="logo-fundo">
+
+        <img src="assets/logo-glitch-fundo2.png"
+             id="logo-fundo2"
+             class="logo-fundo2">
+
+        <img src="assets/logo-glitch-fundo-direito-inferior.png"
+             id="logo-fundo-direito-inferior"
+             class="logo-fundo-direito-inferior">
+
+        <h2>Criar Conta</h2>
+
+        <input
+            type="email"
+            id="email"
+            placeholder="Email"
+        >
+
+        <input
+            type="password"
+            id="senha"
+            placeholder="Senha"
+        >
+
+        <button id="btnCadastro">
+            Criar Conta
+        </button>
+
+        <p id="erro"></p>
+
+        <p>
+            Já possui uma conta?
+            <a href="index.html">Entrar</a>
+        </p>
+
     </div>
+
+    <script type="module" src="js/app.js"></script>
+
 </body>
 </html>

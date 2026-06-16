@@ -3,36 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <link rel="stylesheet" href="style.css">
+
+    <title>Glitch - Login</title>
+
+    <link rel="stylesheet" href="css/login.css">
 </head>
+
 <body>
 
     <div class="login-container">
 
-        <img src="assets/logo-glitch.png" id="logo" class="logo">
-        <img src="assets/logo-glitch-fundo.png" id="logo-fundo" class="logo-fundo">
-        <img src="assets/logo-glitch-fundo2.png" id="logo-fundo2" class="logo-fundo2">
-        <img src="assets/logo-glitch-fundo-direito-inferior.png" 
-        id="logo-fundo-direito-inferior" class="logo-fundo-direito-inferior">
-        <img src="assets/logo-glitch-fundo-direito-inferior.png" 
-        id="logo-fundo-direito-inferior" class="logo-fundo-direito-inferior">
+        <img src="assets/logo-glitch.png"
+             id="logo"
+             class="logo">
+
+        <img src="assets/logo-glitch-fundo3.png"
+             id="logo-fundo"
+             class="logo-fundo3">
+
+        <img src="assets/logo-glitch-fundo2.png"
+             id="logo-fundo2"
+             class="logo-fundo2">
+
+        <img src="assets/logo-glitch-fundo4.png"
+             id="logo-fundo-direito-inferior"
+             class="logo-fundo4">
+
+        <img src="assets/logo-glitch-fundo.png"
+             id="logo-fundo-esquerdo-inferior"
+             class="logo-fundo">
+
+        <img src="assets/logo-glitch-fundo5.png"
+             id="logo-fundo-direito-inferior"
+             class="logo-fundo-esquerdo-superior">
+
+        <img src="assets/logo-glitch-fundo6.png"
+             id="logo-fundo-direito-superior"
+             class="logo-fundo-direito-superior"
+
+        <input
+            type="email"
+            id="email"
+            placeholder="Email"
+        >
+
+        <input
+            type="text"
+            id="username"
+            placeholder="Nome de usuário">
+
+        <input
+            type="password"
+            id="senha"
+            placeholder="Senha"
+        >
 
         <button id="loginBtn">
             Entrar
         </button>
 
-    
+        <p id="erro"></p>
 
-        
+        <p>
+            Não tem uma conta?
+            <a href="register.html">Cadastre-se</a>
+        </p>
 
-        <p>não tem uma conta? <a href="register.html">Cadastre-se</a></p>
-
-        
     </div>
 
-    <script src="script.js"></script>
-
+    <script type="module" src="js/app.js"></script>
 
 </body>
 </html>
