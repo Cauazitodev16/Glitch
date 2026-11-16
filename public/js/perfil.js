@@ -41,11 +41,23 @@ const editProfileBtn = document.getElementById("editProfileBtn");
 const themeToggle = document.getElementById("themeToggle");
 
 const avatar = document.getElementById("avatar");
+
+// ELEMENTOS DA FOTO
+
 const photoUrlInput = document.getElementById("photoUrlInput");
 const previewPhotoBtn = document.getElementById("previewPhotoBtn");
 const savePhotoBtn = document.getElementById("savePhotoBtn");
 const photoPreview = document.getElementById("photoPreview");
 const photoMessage = document.getElementById("photoMessage");
+
+// ELEMENTOS DA CAPA
+
+const cover = document.getElementById("cover");
+const coverUrlInput = document.getElementById("coverUrlInput");
+const previewCoverBtn = document.getElementById("previewCoverBtn");
+const saveCoverBtn = document.getElementById("saveCoverBtn");
+const coverPreview = document.getElementById("coverPreview");
+const coverMessage = document.getElementById("coverMessage");
 
 let usuarioAtual = null;
 
@@ -95,6 +107,13 @@ async function carregarPerfil(user) {
 
         photoUrlInput.value = fotoSalva;
         atualizarAvatar(fotoSalva);
+
+        // CARREGAR CAPA SALVA
+
+        const capaSalva = dados.coverURL || "";
+
+        coverUrlInput.value = capaSalva;
+        atualizarCapa(capaSalva);
 
     } catch (error) {
         console.error("Erro ao carregar perfil:", error);
@@ -297,7 +316,6 @@ savePhotoBtn.addEventListener("click", async () => {
     if (link && !validarLinkImagem(link)) {
         photoMessage.textContent =
             "O link precisa começar com https://";
-
         return;
     }
 
@@ -305,6 +323,133 @@ savePhotoBtn.addEventListener("click", async () => {
     previewPhotoBtn.disabled = true;
 
     photoMessage.textContent = "Salvando foto...";
+
+    try {
+        if (link) {
+            await new Promise((resolve, reject) => {
+                const imagem = new Image();
+
+                imagem.onload = resolve;
+                imagem.onerror = reject;
+
+                imagem.src = link;
+            });
+        }
+
+        const userRef = doc(db, "users", usuarioAtual.uid);
+
+        await setDoc(userRef, {
+            photoURL: link
+        }, {
+            merge: true
+        });
+
+        atualizarAvatar(link);
+
+        photoPreview.hidden = true;
+
+        photoMessage.textContent =
+            "Foto de perfil atualizada com sucesso!";
+
+    } catch (error) {
+        console.error("Erro ao salvar foto:", error);
+
+        photoMessage.textContent =
+            "Não foi possível salvar a foto. Verifique o link e tente novamente.";
+
+    } finally {
+        savePhotoBtn.disabled = false;
+        previewPhotoBtn.disabled = false;
+    }
+});
+
+// ATUALIZAR CAPA DO PERFIL
+
+function atualizarCapa(link) {
+    cover.replaceChildren();
+
+    if (!link) {
+        return;
+    }
+
+    const imagem = document.createElement("img");
+
+    imagem.src = link;
+    imagem.alt = "Capa do perfil";
+    imagem.className = "cover-image";
+    imagem.referrerPolicy = "no-referrer";
+
+    imagem.onerror = () => {
+        imagem.remove();
+    };
+
+    cover.appendChild(imagem);
+}
+
+// VISUALIZAR CAPA ANTES DE SALVAR
+
+previewCoverBtn.addEventListener("click", () => {
+    const link = coverUrlInput.value.trim();
+
+    if (!link) {
+        coverMessage.textContent =
+            "Cole o link de uma imagem primeiro.";
+
+        coverPreview.hidden = true;
+        return;
+    }
+
+    if (!validarLinkImagem(link)) {
+        coverMessage.textContent =
+            "Insira um link válido começando com https://";
+
+        coverPreview.hidden = true;
+        return;
+    }
+
+    coverMessage.textContent = "Carregando imagem...";
+    coverPreview.hidden = true;
+
+    const imagem = new Image();
+
+    imagem.onload = () => {
+        coverPreview.src = link;
+        coverPreview.hidden = false;
+
+        coverMessage.textContent = "Prévia carregada!";
+    };
+
+    imagem.onerror = () => {
+        coverPreview.hidden = true;
+
+        coverMessage.textContent =
+            "Não foi possível carregar essa imagem. Confira o link.";
+    };
+
+    imagem.src = link;
+});
+
+// SALVAR CAPA NO FIRESTORE
+
+saveCoverBtn.addEventListener("click", async () => {
+    if (!usuarioAtual) {
+        coverMessage.textContent =
+            "Você precisa estar conectado para salvar.";
+        return;
+    }
+
+    const link = coverUrlInput.value.trim();
+
+    if (link && !validarLinkImagem(link)) {
+        coverMessage.textContent =
+            "O link precisa começar com https://";
+        return;
+    }
+
+    saveCoverBtn.disabled = true;
+    previewCoverBtn.disabled = true;
+
+    coverMessage.textContent = "Salvando capa...";
 
     try {
         // VERIFICAR SE A IMAGEM CARREGA
@@ -325,29 +470,28 @@ savePhotoBtn.addEventListener("click", async () => {
         const userRef = doc(db, "users", usuarioAtual.uid);
 
         await setDoc(userRef, {
-            photoURL: link
+            coverURL: link
         }, {
             merge: true
         });
 
-        // ATUALIZAR AVATAR
+        atualizarCapa(link);
 
-        atualizarAvatar(link);
+        coverPreview.hidden = true;
 
-        photoPreview.hidden = true;
-
-        photoMessage.textContent =
-            "Foto de perfil atualizada com sucesso!";
+        coverMessage.textContent = link
+            ? "Capa atualizada com sucesso!"
+            : "Capa original restaurada!";
 
     } catch (error) {
-        console.error("Erro ao salvar foto:", error);
+        console.error("Erro ao salvar capa:", error);
 
-        photoMessage.textContent =
-            "Não foi possível salvar a foto. Verifique o link e tente novamente.";
+        coverMessage.textContent =
+            "Não foi possível salvar a capa. Verifique o link e tente novamente.";
 
     } finally {
-        savePhotoBtn.disabled = false;
-        previewPhotoBtn.disabled = false;
+        saveCoverBtn.disabled = false;
+        previewCoverBtn.disabled = false;
     }
 });
 

@@ -1,5 +1,7 @@
 
-/* CONFIGURAÇÕES GERAIS */
+/* ==============================
+   CONFIGURAÇÕES GERAIS
+============================== */
 
 * {
     margin: 0;
@@ -15,7 +17,9 @@ body {
     transition: background 0.3s, color 0.3s;
 }
 
-/* BARRA LATERAL */
+/* ==============================
+   BARRA LATERAL
+============================== */
 
 .sidebar {
     position: fixed;
@@ -55,15 +59,20 @@ body {
     margin-top: auto;
 }
 
-/* CONTEÚDO */
+/* ==============================
+   CONTEÚDO PRINCIPAL
+============================== */
 
 .dashboard {
     margin-left: 75px;
     padding: 25px 35px;
-    max-width: 1500px;
+    width: calc(100% - 75px);
+    max-width: 1600px;
 }
 
-/* BARRA SUPERIOR */
+/* ==============================
+   BARRA SUPERIOR
+============================== */
 
 .topbar {
     display: flex;
@@ -92,7 +101,9 @@ body {
     color: #ff7a18;
 }
 
-/* CABEÇALHO DO PERFIL */
+/* ==============================
+   CABEÇALHO DO PERFIL
+============================== */
 
 .profile-header {
     background: #1b1b23;
@@ -102,37 +113,78 @@ body {
     margin-bottom: 25px;
 }
 
+/* CAPA DO PERFIL */
+
 .cover {
-    height: 190px;
+    width: 100%;
+    height: 175px;
+    position: relative;
+    overflow: hidden;
+
     background: linear-gradient(
         120deg,
         #ff7a18,
         #9d3508,
         #25252e
     );
+
+    background-size: cover;
+    background-position: center 20%;
+    background-repeat: no-repeat;
 }
+
+.cover-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+
+    /* Ajuste do enquadramento da imagem */
+    object-position: center 20%;
+}
+
+/* ==============================
+   INFORMAÇÕES DO PERFIL
+============================== */
 
 .profile-info {
     display: flex;
-    align-items: center;
-    gap: 20px;
-    padding: 20px 25px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 18px;
+    padding: 0 25px 22px;
 }
 
+.profile-main {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+    min-width: 0;
+}
+
+/* FOTO DE PERFIL */
+
 .avatar {
-    width: 110px;
-    height: 110px;
+    width: 112px;
+    height: 112px;
+    flex-shrink: 0;
+
     border-radius: 50%;
     background: #292932;
     border: 5px solid #1b1b23;
+
     display: flex;
     align-items: center;
     justify-content: center;
+
     font-size: 45px;
-    margin-top: -65px;
-    flex-shrink: 0;
+    margin-top: -48px;
+
     overflow: hidden;
+    position: relative;
+    z-index: 2;
 }
 
 .avatar img {
@@ -144,23 +196,27 @@ body {
 
 .user-details {
     flex: 1;
-    min-width: 180px;
+    min-width: 0;
+    padding: 12px 0;
 }
 
 .user-details h1 {
     font-size: 25px;
     margin-bottom: 8px;
+    overflow-wrap: anywhere;
 }
 
 .user-details p {
     color: #aaa;
     font-size: 14px;
     line-height: 1.5;
+    overflow-wrap: anywhere;
 }
 
 /* BOTÃO EDITAR PERFIL */
 
 .edit-button {
+    flex-shrink: 0;
     background: #ff7a18;
     color: white;
     border: none;
@@ -176,33 +232,42 @@ body {
     transform: translateY(-2px);
 }
 
-/* EDITOR DE FOTO */
+/* ==============================
+   EDITORES DE IMAGEM
+============================== */
 
+.cover-editor,
 .photo-editor {
-    flex-basis: 100%;
+    width: 100%;
     background: #25252e;
     border: 1px solid #393943;
     border-radius: 10px;
-    padding: 15px;
-    margin-top: 10px;
+    padding: 13px 16px;
 }
 
+.cover-editor summary,
 .photo-editor summary {
     color: #ff9a50;
     cursor: pointer;
     font-weight: bold;
-}
-
-.photo-editor label {
-    display: block;
-    margin-top: 15px;
-    margin-bottom: 8px;
     font-size: 14px;
 }
 
+.editor-content {
+    padding-top: 12px;
+}
+
+.cover-editor label,
+.photo-editor label {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 13px;
+}
+
+.cover-editor input,
 .photo-editor input {
     width: 100%;
-    padding: 12px;
+    padding: 11px;
     border-radius: 8px;
     border: 1px solid #444;
     background: #18181f;
@@ -210,17 +275,22 @@ body {
     outline: none;
 }
 
+.cover-editor input:focus,
 .photo-editor input:focus {
     border-color: #ff7a18;
 }
 
+/* BOTÕES */
+
+.cover-actions,
 .photo-actions {
     display: flex;
     gap: 10px;
-    margin-top: 12px;
+    margin-top: 11px;
     flex-wrap: wrap;
 }
 
+.cover-actions button,
 .photo-actions button {
     padding: 10px 15px;
     border: none;
@@ -231,14 +301,30 @@ body {
     transition: 0.2s;
 }
 
+.cover-actions button:hover,
 .photo-actions button:hover {
     background: #e9650b;
 }
 
+.cover-actions button:disabled,
 .photo-actions button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }
+
+/* PRÉVIA DA CAPA */
+
+#coverPreview {
+    display: block;
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    object-position: center 20%;
+    border-radius: 8px;
+    margin-top: 12px;
+}
+
+/* PRÉVIA DA FOTO */
 
 #photoPreview {
     display: block;
@@ -246,22 +332,28 @@ body {
     height: 110px;
     object-fit: cover;
     border-radius: 50%;
-    margin-top: 15px;
+    margin-top: 12px;
     border: 3px solid #ff7a18;
 }
 
+#coverPreview[hidden],
 #photoPreview[hidden] {
     display: none;
 }
 
+/* MENSAGENS */
+
+#coverMessage,
 #photoMessage {
     color: #aaa;
-    font-size: 13px;
-    margin-top: 10px;
+    font-size: 12px;
+    margin-top: 9px;
     line-height: 1.5;
 }
 
-/* ESTATÍSTICAS */
+/* ==============================
+   ESTATÍSTICAS
+============================== */
 
 .profile-stats {
     display: grid;
@@ -289,7 +381,9 @@ body {
     font-size: 14px;
 }
 
-/* CARDS DE INFORMAÇÕES */
+/* ==============================
+   CARDS DE INFORMAÇÕES
+============================== */
 
 .profile-content {
     display: grid;
@@ -317,7 +411,9 @@ body {
     line-height: 1.6;
 }
 
-/* JOGOS FAVORITOS */
+/* ==============================
+   JOGOS FAVORITOS
+============================== */
 
 .favorite-games {
     display: flex;
@@ -339,7 +435,9 @@ body {
     font-size: 13px;
 }
 
-/* PUBLICAÇÕES */
+/* ==============================
+   PUBLICAÇÕES
+============================== */
 
 .publications {
     margin-bottom: 30px;
@@ -384,7 +482,9 @@ body {
     text-align: center;
 }
 
-/* MODO CLARO */
+/* ==============================
+   MODO CLARO
+============================== */
 
 body.light-mode {
     background: #f2f2f5;
@@ -443,22 +543,27 @@ body.light-mode .theme-toggle:hover {
     border-color: #ff7a18;
 }
 
-body.light-mode .photo-editor {
+body.light-mode .photo-editor,
+body.light-mode .cover-editor {
     background: #fff;
     border-color: #dedee5;
 }
 
-body.light-mode .photo-editor input {
+body.light-mode .photo-editor input,
+body.light-mode .cover-editor input {
     background: #f2f2f5;
     color: #202027;
     border-color: #dedee5;
 }
 
-body.light-mode #photoMessage {
+body.light-mode #photoMessage,
+body.light-mode #coverMessage {
     color: #666670;
 }
 
-/* RESPONSIVIDADE */
+/* ==============================
+   RESPONSIVIDADE
+============================== */
 
 @media (max-width: 800px) {
     .dashboard {
@@ -470,13 +575,80 @@ body.light-mode #photoMessage {
     }
 
     .cover {
-        height: 150px;
+        height: 145px;
+    }
+
+    .profile-main {
+        gap: 15px;
     }
 }
 
 @media (max-width: 550px) {
+    .sidebar {
+        width: 60px;
+        gap: 22px;
+    }
+
+    .sidebar a {
+        font-size: 20px;
+    }
+
     .dashboard {
+        margin-left: 60px;
+        width: calc(100% - 60px);
         padding: 15px;
+    }
+
+    .topbar {
+        margin-bottom: 20px;
+    }
+
+    .topbar h2 {
+        font-size: 21px;
+    }
+
+    .theme-toggle {
+        padding: 9px 11px;
+        font-size: 12px;
+    }
+
+    .cover {
+        height: 120px;
+    }
+
+    .profile-info {
+        padding: 0 14px 16px;
+        gap: 14px;
+    }
+
+    .profile-main {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .avatar {
+        width: 82px;
+        height: 82px;
+        font-size: 34px;
+        margin-top: -35px;
+    }
+
+    .user-details {
+        flex: 1;
+        min-width: 120px;
+    }
+
+    .user-details h1 {
+        font-size: 19px;
+    }
+
+    .user-details p {
+        font-size: 12px;
+    }
+
+    .edit-button {
+        width: 100%;
+        padding: 11px;
     }
 
     .profile-stats {
@@ -495,30 +667,15 @@ body.light-mode #photoMessage {
         font-size: 12px;
     }
 
-    .profile-info {
+    .profile-content {
         gap: 12px;
-        padding: 15px;
     }
 
-    .avatar {
-        width: 85px;
-        height: 85px;
-        font-size: 35px;
-        margin-top: -50px;
+    .profile-card {
+        padding: 18px;
     }
 
-    .user-details h1 {
-        font-size: 20px;
-    }
-
-    .edit-button {
-        width: 100%;
-    }
-
-    .topbar h2 {
-        font-size: 21px;
-    }
-
+    .cover-actions button,
     .photo-actions button {
         flex: 1;
     }

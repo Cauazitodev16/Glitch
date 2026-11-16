@@ -38,61 +38,104 @@
         <!-- CABEÇALHO DO PERFIL -->
         <section class="profile-header">
 
-            <div class="cover"></div>
+            <!-- CAPA -->
+            <div class="cover" id="cover"></div>
 
+            <!-- INFORMAÇÕES PRINCIPAIS -->
             <div class="profile-info">
 
-                <div class="avatar" id="avatar">
-                    👤
-                </div>
+                <div class="profile-main">
 
-                <div class="user-details">
-                    <h1 id="username">Carregando...</h1>
-
-                    <p id="userBio">
-                        Adicione uma biografia ao seu perfil.
-                    </p>
-                </div>
-
-                <button id="editProfileBtn" class="edit-button">
-                    Editar perfil
-                </button>
-
-                <!-- EDITAR FOTO -->
-                <details class="photo-editor">
-
-                    <summary>📷 Alterar foto de perfil</summary>
-
-                    <label for="photoUrlInput">
-                        Link da imagem:
-                    </label>
-
-                    <input
-                        type="url"
-                        id="photoUrlInput"
-                        placeholder="https://exemplo.com/foto.png"
-                    >
-
-                    <div class="photo-actions">
-
-                        <button type="button" id="previewPhotoBtn">
-                            Visualizar
-                        </button>
-
-                        <button type="button" id="savePhotoBtn">
-                            Salvar foto
-                        </button>
-
+                    <div class="avatar" id="avatar">
+                        👤
                     </div>
 
-                    <img
-                        id="photoPreview"
-                        alt="Prévia da foto"
-                        hidden
-                    >
+                    <div class="user-details">
+                        <h1 id="username">Carregando...</h1>
 
-                    <p id="photoMessage"></p>
+                        <p id="userBio">
+                            Adicione uma biografia ao seu perfil.
+                        </p>
+                    </div>
 
+                    <button id="editProfileBtn" class="edit-button">
+                        Editar perfil
+                    </button>
+
+                </div>
+
+                <!-- EDITOR DA CAPA -->
+                <details class="cover-editor">
+                    <summary>🖼️ Alterar capa do perfil</summary>
+
+                    <div class="editor-content">
+
+                        <label for="coverUrlInput">
+                            Link da imagem:
+                        </label>
+
+                        <input
+                            type="url"
+                            id="coverUrlInput"
+                            placeholder="https://exemplo.com/imagem.jpg"
+                        >
+
+                        <div class="cover-actions">
+                            <button type="button" id="previewCoverBtn">
+                                Visualizar
+                            </button>
+
+                            <button type="button" id="saveCoverBtn">
+                                Salvar capa
+                            </button>
+                        </div>
+
+                        <img
+                            id="coverPreview"
+                            alt="Prévia da capa"
+                            hidden
+                        >
+
+                        <p id="coverMessage"></p>
+
+                    </div>
+                </details>
+
+                <!-- EDITOR DA FOTO -->
+                <details class="photo-editor">
+                    <summary>📷 Alterar foto de perfil</summary>
+
+                    <div class="editor-content">
+
+                        <label for="photoUrlInput">
+                            Link da imagem:
+                        </label>
+
+                        <input
+                            type="url"
+                            id="photoUrlInput"
+                            placeholder="https://exemplo.com/foto.png"
+                        >
+
+                        <div class="photo-actions">
+                            <button type="button" id="previewPhotoBtn">
+                                Visualizar
+                            </button>
+
+                            <button type="button" id="savePhotoBtn">
+                                Salvar foto
+                            </button>
+                        </div>
+
+                        <img
+                            id="photoPreview"
+                            alt="Prévia da foto"
+                            hidden
+                        >
+
+                        <p id="photoMessage"></p>
+
+                    </div>
                 </details>
 
             </div>
