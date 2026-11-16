@@ -1,0 +1,208 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Glitch - Home</title>
+
+    <link rel="stylesheet" href="css/home.css">
+</head>
+
+<body>
+
+    <!-- BARRA LATERAL -->
+    <aside class="sidebar">
+
+        <div class="logo-mini">
+            <img src="assets/logo-glitch.png" alt="Glitch">
+        </div>
+
+        <a href="home.html" title="Home">🏠</a>
+        <a href="#" title="Lobbies">🎮</a>
+        <a href="#" title="Área Social">💬</a>
+        <a href="#" title="Notificações">🔔</a>
+        <a href="#" title="Configurações">⚙️</a>
+
+        <div class="profile-icon">
+            <a href="perfil.html" title="Meu perfil">👤</a>
+        </div>
+
+    </aside>
+
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="dashboard">
+
+        <!-- BARRA SUPERIOR -->
+        <header class="topbar">
+
+            <input
+                type="text"
+                placeholder="Buscar jogadores, eventos ou lobbies..."
+                class="search"
+            >
+
+            <button id="themeToggle" class="theme-toggle">
+                ☀️ Modo claro
+            </button>   
+
+            <div class="top-icons">
+                <a href="#">🔔</a>
+                <a href="#">💬</a>
+                <a href="perfil.html">👤</a>
+            </div>
+
+        </header>
+
+
+        <!-- BOAS-VINDAS E ESTATÍSTICAS -->
+        <section class="welcome-section">
+
+            <div class="stats-area">
+
+                <h1>
+                    Bem-vindo,
+                    <span id="username">Jogador</span>!
+                </h1>
+
+                <div class="stats">
+
+                    <div class="stat">
+                        <h2 id="totalUsers">0</h2>
+                        <p>Jogadores</p>
+                    </div>
+
+                    <div class="stat">
+                        <h2 id="totalLobbies">0</h2>
+                        <p>Lobbies</p>
+                    </div>
+
+                    <div class="stat">
+                        <h2 id="totalEvents">0</h2>
+                        <p>Eventos</p>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- BANNER PRINCIPAL -->
+            <div class="banner">
+
+                <h2>Torneio Valorant</h2>
+
+                <p>Hoje às 20h</p>
+
+                <button>Participar</button>
+
+            </div>
+
+        </section>
+
+
+        <!-- EVENTOS EM DESTAQUE -->
+        <section class="events">
+
+            <h2>Eventos em destaque</h2>
+
+            <div class="event-list">
+
+                <div class="event-card">
+
+                    <div class="event-image"></div>
+
+                    <h3>Valorant Cup</h3>
+
+                    <button>Ver</button>
+
+                </div>
+
+
+                <div class="event-card">
+
+                    <div class="event-image"></div>
+
+                    <h3>CS2 Night</h3>
+
+                    <button>Ver</button>
+
+                </div>
+
+
+                <div class="event-card">
+
+                    <div class="event-image"></div>
+
+                    <h3>Rocket League</h3>
+
+                    <button>Ver</button>
+
+                </div>
+
+
+                <div class="event-card">
+
+                    <div class="event-image"></div>
+
+                    <h3>Minecraft Build Battle</h3>
+
+                    <button>Ver</button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- FEED SOCIAL -->
+        <section class="feed">
+
+            <div class="post">
+
+                <h3>PlayerX</h3>
+
+                <p>Procuro equipe para Valorant.</p>
+
+            </div>
+
+
+            <div class="post">
+
+                <h3>Ghost</h3>
+
+                <p>Lobby de Minecraft aberto.</p>
+
+            </div>
+
+
+            <div class="post">
+
+                <h3>Cyber</h3>
+
+                <p>Evento começando em 30 minutos.</p>
+
+            </div>
+
+
+            <div class="post">
+
+                <h3>Pixel</h3>
+
+                <p>Alguém para jogar CS2?</p>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- JAVASCRIPT -->
+    <script type="module" src="js/home.js"></script>
+
+</body>
+</html>

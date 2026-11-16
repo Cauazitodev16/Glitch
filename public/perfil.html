@@ -1,0 +1,161 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glitch - Meu Perfil</title>
+    <link rel="stylesheet" href="css/perfil.css">
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="logo-mini">
+            <img src="assets/logo-glitch.png" alt="Glitch">
+        </div>
+
+        <a href="home.html" title="Home">🏠</a>
+        <a href="#" title="Lobbies">🎮</a>
+        <a href="#" title="Área Social">💬</a>
+        <a href="#" title="Notificações">🔔</a>
+        <a href="#" title="Configurações">⚙️</a>
+
+        <div class="profile-icon">
+            <a href="perfil.html" title="Meu perfil">👤</a>
+        </div>
+    </aside>
+
+    <main class="dashboard">
+
+        <header class="topbar">
+            <h2>Meu Perfil</h2>
+
+            <button id="themeToggle" class="theme-toggle">
+                ☀️ Modo claro
+            </button>
+        </header>
+
+        <!-- CABEÇALHO DO PERFIL -->
+        <section class="profile-header">
+
+            <div class="cover"></div>
+
+            <div class="profile-info">
+
+                <div class="avatar" id="avatar">
+                    👤
+                </div>
+
+                <div class="user-details">
+                    <h1 id="username">Carregando...</h1>
+
+                    <p id="userBio">
+                        Adicione uma biografia ao seu perfil.
+                    </p>
+                </div>
+
+                <button id="editProfileBtn" class="edit-button">
+                    Editar perfil
+                </button>
+
+                <!-- EDITAR FOTO -->
+                <details class="photo-editor">
+
+                    <summary>📷 Alterar foto de perfil</summary>
+
+                    <label for="photoUrlInput">
+                        Link da imagem:
+                    </label>
+
+                    <input
+                        type="url"
+                        id="photoUrlInput"
+                        placeholder="https://exemplo.com/foto.png"
+                    >
+
+                    <div class="photo-actions">
+
+                        <button type="button" id="previewPhotoBtn">
+                            Visualizar
+                        </button>
+
+                        <button type="button" id="savePhotoBtn">
+                            Salvar foto
+                        </button>
+
+                    </div>
+
+                    <img
+                        id="photoPreview"
+                        alt="Prévia da foto"
+                        hidden
+                    >
+
+                    <p id="photoMessage"></p>
+
+                </details>
+
+            </div>
+
+        </section>
+
+        <!-- ESTATÍSTICAS -->
+        <section class="profile-stats">
+
+            <div class="stat">
+                <h2 id="postsCount">0</h2>
+                <p>Publicações</p>
+            </div>
+
+            <div class="stat">
+                <h2 id="friendsCount">0</h2>
+                <p>Amigos</p>
+            </div>
+
+            <div class="stat">
+                <h2 id="eventsCount">0</h2>
+                <p>Eventos</p>
+            </div>
+
+        </section>
+
+        <!-- INFORMAÇÕES DO PERFIL -->
+        <section class="profile-content">
+
+            <div class="profile-card">
+                <h2>Sobre mim</h2>
+
+                <p id="aboutText">
+                    Ainda não adicionou informações.
+                </p>
+            </div>
+
+            <div class="profile-card">
+                <h2>Jogos favoritos</h2>
+
+                <div id="favoriteGames" class="favorite-games">
+                    <span>Nenhum jogo adicionado.</span>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- PUBLICAÇÕES -->
+        <section class="publications">
+
+            <h2>Minhas publicações</h2>
+
+            <div id="postsList">
+                <p class="empty-message">
+                    Você ainda não possui publicações.
+                </p>
+            </div>
+
+        </section>
+
+    </main>
+
+    <script type="module" src="js/perfil.js"></script>
+
+</body>
+</html>
