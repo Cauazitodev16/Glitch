@@ -13,16 +13,15 @@ import {
     getDoc,
     getDocs,
     setDoc,
-    updateDoc,
     query,
     where,
     onSnapshot,
     orderBy,
     serverTimestamp,
-    runTransaction
+    writeBatch
 } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
-
+// CONFIGURAÇÃO FIREBASE
 const firebaseConfig = {
   apiKey: "AIzaSyDdGZsfDOqY7xqI_Nd4pUc52PkXH0Hjt0g",
   authDomain: "meetq-9b370.firebaseapp.com",
@@ -54,6 +53,7 @@ const messageInput = document.getElementById("messageInput");
 const sendMessageBtn = document.getElementById("sendMessageBtn");
 const messageStatus = document.getElementById("messageStatus");
 
+// ESTADO
 let currentUser = null;
 let currentUserName = "Jogador";
 let currentUserPhoto = "";
@@ -61,14 +61,18 @@ let currentUserPhoto = "";
 let publicPlayers = [];
 let conversations = [];
 let activeConversationId = null;
-let activePlayer = null;
 
 let unsubscribeConversations = null;
 let unsubscribeMessages = null;
 
-// IMAGEM SEGURA
+// ID DA CONVERSA PARA DIAGNÓSTICO
+const conversationIdTeste =
+    "Ti7UYdyEj4ht9fZv59jjwYFclN03__dNrMvvXzRCShyIYAPBeESWZr6JH2";
+
+// IMAGENS SEGURAS
 function imagemSegura(url) {
     if (typeof url !== "string") return "";
+
     try {
         const parsed = new URL(url);
         return parsed.protocol === "https:" ? parsed.href : "";
@@ -77,19 +81,18 @@ function imagemSegura(url) {
     }
 }
 
-function nomeDoJogador(data) {
+function nomeDoJogador(data = {}) {
     return data.displayName || data.name || "Jogador";
 }
 
-function fotoDoJogador(data) {
+function fotoDoJogador(data = {}) {
     return imagemSegura(data.photoURL || "");
 }
 
-// CRIAR IMAGEM DE PERFIL
 function criarAvatar(url, nome) {
     const img = document.createElement("img");
-    img.alt = `Foto de ${nome}`;
 
+    img.alt = `Foto de ${nome}`;
     img.src = fotoDoJogador({ photoURL: url }) ||
         "assets/avatar-padrao.png";
 
@@ -111,6 +114,9 @@ async function carregarDadosDoUsuario() {
 
         currentUserName = nomeDoJogador(data);
         currentUserPhoto = fotoDoJogador(data);
+    } else {
+        currentUserName = currentUser.displayName || "Jogador";
+        currentUserPhoto = imagemSegura(currentUser.photoURL || "");
     }
 }
 
@@ -138,10 +144,9 @@ function pesquisarJogadores() {
     }
 
     const encontrados = publicPlayers
-        .filter(player => {
-            const nome = nomeDoJogador(player).toLowerCase();
-            return nome.includes(termo);
-        })
+        .filter(player =>
+            nomeDoJogador(player).toLowerCase().includes(termo)
+        )
         .slice(0, 10);
 
     searchResults.classList.add("visible");
@@ -182,7 +187,7 @@ function pesquisarJogadores() {
     });
 }
 
-// ID ÚNICO PARA A CONVERSA ENTRE DOIS JOGADORES
+// ID ÚNICO DA CONVERSA
 function criarIdConversa(uid1, uid2) {
     return [uid1, uid2].sort().join("__");
 }
@@ -190,7 +195,6 @@ function criarIdConversa(uid1, uid2) {
 // INICIAR OU ABRIR CONVERSA
 async function iniciarConversa(player) {
     if (!currentUser || !player?.uid) return;
-
     if (player.uid === currentUser.uid) return;
 
     const conversationId = criarIdConversa(
@@ -216,35 +220,41 @@ async function iniciarConversa(player) {
     };
 
     try {
-        await runTransaction(db, async transaction => {
-            const conversationSnap = await transaction.get(conversationRef);
+        await setDoc(conversationRef, {
+            members,
+            memberNames,
+            memberPhotos
+        }, { merge: true });
 
-            if (!conversationSnap.exists()) {
-                transaction.set(conversationRef, {
-                    members,
-                    memberNames,
-                    memberPhotos,
-                    lastMessage: "",
-                    lastSenderId: "",
-                    lastMessageAt: serverTimestamp(),
-                    createdAt: serverTimestamp()
-                });
-            }
-        });
-
-        userSearch.value = "";
-        searchResults.classList.remove("visible");
-
-        abrirConversa({
+        const conversation = {
             id: conversationId,
             members,
             memberNames,
             memberPhotos
-        }, player);
+        };
+
+        const index = conversations.findIndex(
+            item => item.id === conversationId
+        );
+
+        if (index >= 0) {
+            conversations[index] = {
+                ...conversations[index],
+                ...conversation
+            };
+        } else {
+            conversations.unshift(conversation);
+        }
+
+        userSearch.value = "";
+        searchResults.classList.remove("visible");
+
+        renderizarConversas();
+        abrirConversa(conversation, player);
 
     } catch (error) {
         console.error("Erro ao iniciar conversa:", error);
-        alert("Não foi possível iniciar a conversa. Verifique as permissões do Firestore.");
+        alert("Não foi possível iniciar a conversa. Verifique as regras do Firestore.");
     }
 }
 
@@ -265,14 +275,10 @@ function abrirConversa(conversation, player = null) {
     const foto = conversation.memberPhotos?.[otherUid] ||
         (otherPlayer ? fotoDoJogador(otherPlayer) : "");
 
-    activePlayer = {
-        uid: otherUid,
-        name: nome,
-        photoURL: foto
-    };
-
     chatName.textContent = nome;
+
     chatAvatar.src = foto || "assets/avatar-padrao.png";
+    chatAvatar.alt = `Foto de ${nome}`;
 
     chatAvatar.onerror = () => {
         chatAvatar.removeAttribute("src");
@@ -293,6 +299,7 @@ function abrirConversa(conversation, player = null) {
 function carregarMensagens(conversationId) {
     if (unsubscribeMessages) {
         unsubscribeMessages();
+        unsubscribeMessages = null;
     }
 
     messagesList.replaceChildren();
@@ -312,12 +319,19 @@ function carregarMensagens(conversationId) {
     unsubscribeMessages = onSnapshot(
         messagesQuery,
         snapshot => {
+            const estavaNoFinal =
+                messagesList.scrollHeight -
+                messagesList.scrollTop -
+                messagesList.clientHeight < 100;
+
             messagesList.replaceChildren();
 
             if (snapshot.empty) {
                 const empty = document.createElement("p");
                 empty.className = "empty-state";
-                empty.textContent = "Esta conversa ainda não tem mensagens.";
+                empty.textContent =
+                    "Esta conversa ainda não tem mensagens.";
+
                 messagesList.appendChild(empty);
                 return;
             }
@@ -326,7 +340,6 @@ function carregarMensagens(conversationId) {
                 const message = messageDoc.data();
 
                 const bubble = document.createElement("div");
-
                 bubble.className = "message-bubble";
 
                 if (message.senderId === currentUser.uid) {
@@ -345,17 +358,23 @@ function carregarMensagens(conversationId) {
                             hour: "2-digit",
                             minute: "2-digit"
                         });
+                } else {
+                    time.textContent = "Enviando...";
                 }
 
                 bubble.append(text, time);
                 messagesList.appendChild(bubble);
             });
 
-            messagesList.scrollTop = messagesList.scrollHeight;
+            if (estavaNoFinal) {
+                messagesList.scrollTop = messagesList.scrollHeight;
+            }
         },
         error => {
             console.error("Erro ao carregar mensagens:", error);
-            messageStatus.textContent = "Não foi possível carregar as mensagens.";
+
+            messageStatus.textContent =
+                "Não foi possível carregar as mensagens.";
         }
     );
 }
@@ -371,7 +390,8 @@ messageForm.addEventListener("submit", async event => {
     if (!text) return;
 
     if (text.length > 2000) {
-        messageStatus.textContent = "A mensagem ultrapassou o limite permitido.";
+        messageStatus.textContent =
+            "A mensagem ultrapassou o limite permitido.";
         return;
     }
 
@@ -379,43 +399,116 @@ messageForm.addEventListener("submit", async event => {
     messageStatus.textContent = "";
 
     try {
-        const messagesRef = collection(
-            db,
-            "conversations",
-            activeConversationId,
-            "messages"
-        );
-
-        const messageRef = doc(messagesRef);
-
         const conversationRef = doc(
             db,
             "conversations",
             activeConversationId
         );
 
-        await setDoc(messageRef, {
+        const messagesRef = collection(
+            conversationRef,
+            "messages"
+        );
+
+        const messageRef = doc(messagesRef);
+
+        const batch = writeBatch(db);
+
+        batch.set(messageRef, {
             text,
             senderId: currentUser.uid,
             createdAt: serverTimestamp()
         });
 
-        await updateDoc(conversationRef, {
+        batch.update(conversationRef, {
             lastMessage: text,
             lastSenderId: currentUser.uid,
             lastMessageAt: serverTimestamp()
         });
+
+        await batch.commit();
 
         messageInput.value = "";
         messageInput.focus();
 
     } catch (error) {
         console.error("Erro ao enviar mensagem:", error);
-        messageStatus.textContent = "Erro ao enviar. Tente novamente.";
+
+        messageStatus.textContent =
+            "Erro ao enviar. Tente novamente.";
     } finally {
         sendMessageBtn.disabled = false;
     }
 });
+
+// TESTE 1: LER UM DOCUMENTO ESPECÍFICO
+async function testarLeituraConversa() {
+    console.log("========== TESTE 1: GETDOC ==========");
+    console.log("Projeto Firebase:", app.options.projectId);
+    console.log("UID autenticado:", currentUser.uid);
+
+    try {
+        const conversationRef = doc(
+            db,
+            "conversations",
+            conversationIdTeste
+        );
+
+        const teste = await getDoc(conversationRef);
+
+        console.log("Documento encontrado:", teste.exists());
+
+        if (teste.exists()) {
+            console.log(
+                "Participantes encontrados:",
+                teste.data().members
+            );
+        }
+
+        console.log("========== FIM TESTE 1 ==========");
+
+    } catch (error) {
+        console.error("Erro no teste de leitura:", error);
+        console.error("Código:", error.code);
+        console.error("Mensagem:", error.message);
+    }
+}
+
+// TESTE 2: CONSULTAR CONVERSAS COM GETDOCS
+async function testarConsultaConversas() {
+    console.log("========== TESTE 2: GETDOCS ==========");
+    console.log("UID usado na consulta:", currentUser.uid);
+
+    try {
+        const testeQuery = query(
+            collection(db, "conversations"),
+            where("members", "array-contains", currentUser.uid)
+        );
+
+        const resultado = await getDocs(testeQuery);
+
+        console.log("Consulta autorizada!");
+        console.log("Quantidade de conversas:", resultado.size);
+
+        resultado.forEach(item => {
+            console.log("ID da conversa:", item.id);
+            console.log("Participantes:", item.data().members);
+        });
+
+        console.log("========== FIM TESTE 2 ==========");
+
+        return true;
+
+    } catch (error) {
+        console.error("Falha no teste getDocs:", error);
+        console.error("Código do erro:", error.code);
+        console.error("Mensagem:", error.message);
+
+        console.log("========== FIM TESTE 2 COM ERRO ==========");
+
+        return false;
+    }
+}
 
 // CARREGAR CONVERSAS EM TEMPO REAL
 function carregarConversas() {
@@ -425,6 +518,8 @@ function carregarConversas() {
         conversationsRef,
         where("members", "array-contains", currentUser.uid)
     );
+
+    console.log("UID usado na consulta em tempo real:", currentUser.uid);
 
     unsubscribeConversations = onSnapshot(
         conversationsQuery,
@@ -437,6 +532,7 @@ function carregarConversas() {
             conversations.sort((a, b) => {
                 const dateA = a.lastMessageAt?.toMillis?.() || 0;
                 const dateB = b.lastMessageAt?.toMillis?.() || 0;
+
                 return dateB - dateA;
             });
 
@@ -444,7 +540,11 @@ function carregarConversas() {
         },
         error => {
             console.error("Erro ao carregar conversas:", error);
-            conversationList.textContent = "Não foi possível carregar as conversas.";
+            console.error("Código:", error.code);
+            console.error("Mensagem:", error.message);
+
+            conversationList.textContent =
+                "Não foi possível carregar as conversas.";
         }
     );
 }
@@ -456,15 +556,20 @@ function renderizarConversas() {
     if (!conversations.length) {
         const empty = document.createElement("p");
         empty.className = "empty-state";
-        empty.textContent = "Você ainda não tem conversas. Pesquise um jogador para começar.";
+
+        empty.textContent =
+            "Você ainda não tem conversas. Pesquise um jogador para começar.";
+
         conversationList.appendChild(empty);
         return;
     }
 
     conversations.forEach(conversation => {
-        const otherUid = conversation.members.find(
+        const otherUid = conversation.members?.find(
             uid => uid !== currentUser.uid
         );
+
+        if (!otherUid) return;
 
         const player = publicPlayers.find(
             item => item.uid === otherUid
@@ -498,9 +603,8 @@ function renderizarConversas() {
             ? "Você: "
             : "";
 
-        preview.textContent = prefix + (
-            conversation.lastMessage || "Comece uma conversa"
-        );
+        preview.textContent = prefix +
+            (conversation.lastMessage || "Comece uma conversa");
 
         info.append(title, preview);
         button.appendChild(info);
@@ -535,10 +639,20 @@ onAuthStateChanged(auth, async user => {
         await carregarDadosDoUsuario();
         await carregarJogadores();
 
+        // TESTE 1
+        await testarLeituraConversa();
+
+        // TESTE 2
+        await testarConsultaConversas();
+
+        // LISTENER EM TEMPO REAL
         carregarConversas();
 
     } catch (error) {
         console.error("Erro ao inicializar mensagens:", error);
+        console.error("Código:", error.code);
+        console.error("Mensagem:", error.message);
+
         conversationList.textContent =
             "Erro ao carregar. Verifique sua conexão e as permissões.";
     }
