@@ -14,7 +14,8 @@ import {
     doc,
     getDoc,
     setDoc,
-    updateDoc
+    updateDoc,
+    writeBatch
 } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -25,7 +26,8 @@ const firebaseConfig = {
   messagingSenderId: "889397323612",
   appId: "1:889397323612:web:fb375053f9cb15e7168399"
 };
-// Reutiliza o app Firebase, caso já exista.
+
+// Firebase
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 const auth = getAuth(app);
@@ -37,11 +39,18 @@ let perfilCarregado = false;
 
 const $ = (seletor) => document.querySelector(seletor);
 
+// MENSAGENS DE AVISO
 function mensagem(seletor, texto) {
     const elemento = $(seletor);
     if (elemento) elemento.textContent = texto;
 }
 
+function atualizarTexto(seletor, texto) {
+    const elemento = $(seletor);
+    if (elemento) elemento.textContent = texto ?? "";
+}
+
+// VALIDAR IMAGENS
 function imagemSegura(url) {
     if (!url || typeof url !== "string") return "";
 
@@ -53,28 +62,67 @@ function imagemSegura(url) {
     }
 }
 
-function atualizarTexto(seletor, texto) {
-    const elemento = $(seletor);
-    if (elemento) elemento.textContent = texto ?? "";
-}
-
+// REFERÊNCIAS DO FIRESTORE
 function referenciaPerfil() {
     return doc(db, "users", usuarioAtual.uid);
 }
 
+function referenciaPublica() {
+    return doc(db, "publicUsers", usuarioAtual.uid);
+}
+
+// DADOS QUE OUTROS JOGADORES PODEM VER
+// Nunca colocar email ou informações privadas aqui.
+function montarDadosPublicos(dados) {
+    const nome = dados.name || "Jogador";
+
+    return {
+        uid: usuarioAtual.uid,
+        name: nome,
+        displayName: nome,
+        bio: dados.bio || "",
+        photoURL: imagemSegura(dados.photoURL),
+        status: dados.status || "offline",
+        platform: dados.platform || ""
+    };
+}
+
+// SALVAR PERFIL PRIVADO E SINCRONIZAR PERFIL PÚBLICO
 async function salvarDados(dados) {
     if (!usuarioAtual || !dadosPerfil) {
         throw new Error("Perfil ainda não carregado.");
     }
 
-    await updateDoc(referenciaPerfil(), dados);
+    const perfilRef = referenciaPerfil();
+    const publicoRef = referenciaPublica();
+
+    const novosDados = {
+        ...dadosPerfil,
+        ...dados
+    };
+
+    const dadosPublicos = montarDadosPublicos(novosDados);
+
+    // Salva os dois documentos na mesma operação.
+    const batch = writeBatch(db);
+
+    batch.update(perfilRef, dados);
+
+    batch.set(publicoRef, dadosPublicos, {
+        merge: true
+    });
+
+    await batch.commit();
+
     Object.assign(dadosPerfil, dados);
 }
 
-// CARREGAR PERFIL
+// CRIAR OU CARREGAR PERFIL
 async function carregarPerfil(user) {
-    const referencia = doc(db, "users", user.uid);
-    const resultado = await getDoc(referencia);
+    const perfilRef = doc(db, "users", user.uid);
+    const publicoRef = doc(db, "publicUsers", user.uid);
+
+    const resultado = await getDoc(perfilRef);
 
     if (resultado.exists()) {
         dadosPerfil = resultado.data();
@@ -98,8 +146,27 @@ async function carregarPerfil(user) {
             eventsCount: 0
         };
 
-        await setDoc(referencia, dadosPerfil);
+        // Cria o perfil privado.
+        const batch = writeBatch(db);
+
+        batch.set(perfilRef, dadosPerfil);
+
+        batch.set(
+            publicoRef,
+            montarDadosPublicos(dadosPerfil),
+            { merge: true }
+        );
+
+        await batch.commit();
     }
+
+    // Sincroniza também perfis antigos que ainda não possuem
+    // documento em publicUsers.
+    await setDoc(
+        publicoRef,
+        montarDadosPublicos(dadosPerfil),
+        { merge: true }
+    );
 
     renderizarPerfil();
     perfilCarregado = true;
@@ -110,15 +177,37 @@ function renderizarPerfil() {
     if (!dadosPerfil) return;
 
     atualizarTexto("#username", dadosPerfil.name || "Jogador");
-    atualizarTexto("#userBio", dadosPerfil.bio || "Adicione uma biografia.");
-    atualizarTexto("#aboutText", dadosPerfil.about || "Ainda não adicionou informações.");
 
-    const posts = Array.isArray(dadosPerfil.posts) ? dadosPerfil.posts : [];
+    atualizarTexto(
+        "#userBio",
+        dadosPerfil.bio || "Adicione uma biografia."
+    );
 
-    atualizarTexto("#postsCount", dadosPerfil.postsCount ?? posts.length);
-    atualizarTexto("#friendsCount", dadosPerfil.friendsCount ?? 0);
-    atualizarTexto("#eventsCount", dadosPerfil.eventsCount ?? 0);
+    atualizarTexto(
+        "#aboutText",
+        dadosPerfil.about || "Ainda não adicionou informações."
+    );
 
+    const posts = Array.isArray(dadosPerfil.posts)
+        ? dadosPerfil.posts
+        : [];
+
+    atualizarTexto(
+        "#postsCount",
+        dadosPerfil.postsCount ?? posts.length
+    );
+
+    atualizarTexto(
+        "#friendsCount",
+        dadosPerfil.friendsCount ?? 0
+    );
+
+    atualizarTexto(
+        "#eventsCount",
+        dadosPerfil.eventsCount ?? 0
+    );
+
+    // STATUS
     const status = dadosPerfil.status || "offline";
     const statusBadge = $("#statusBadge");
 
@@ -133,13 +222,17 @@ function renderizarPerfil() {
         statusBadge.className = `status-badge status-${status}`;
     }
 
+    // PLATAFORMA
     const plataforma = dadosPerfil.platform || "";
 
     atualizarTexto(
         "#platformBadge",
-        plataforma ? `🎮 ${plataforma}` : "🎮 Plataforma não definida"
+        plataforma
+            ? `🎮 ${plataforma}`
+            : "🎮 Plataforma não definida"
     );
 
+    // AVATAR
     const avatar = $("#avatar");
     const foto = imagemSegura(dadosPerfil.photoURL);
 
@@ -148,26 +241,38 @@ function renderizarPerfil() {
 
         if (foto) {
             const img = document.createElement("img");
+
             img.src = foto;
             img.alt = "Foto de perfil";
+
             avatar.appendChild(img);
         } else {
             avatar.textContent = "👤";
         }
     }
 
+    // CAPA
     const capa = imagemSegura(dadosPerfil.coverURL);
     const cover = $("#cover");
 
     if (cover) {
-        cover.style.backgroundImage = capa ? `url("${capa}")` : "";
+        cover.style.backgroundImage = capa
+            ? `url("${capa}")`
+            : "";
     }
 
-    if ($("#statusSelect")) $("#statusSelect").value = status;
-    if ($("#platformSelect")) $("#platformSelect").value = plataforma;
+    // PREFERÊNCIAS
+    if ($("#statusSelect")) {
+        $("#statusSelect").value = status;
+    }
+
+    if ($("#platformSelect")) {
+        $("#platformSelect").value = plataforma;
+    }
 
     if ($("#accentColor")) {
-        $("#accentColor").value = dadosPerfil.accentColor || "#ff7a18";
+        $("#accentColor").value =
+            dadosPerfil.accentColor || "#ff7a18";
 
         document.documentElement.style.setProperty(
             "--accent",
@@ -184,13 +289,25 @@ function renderizarPerfil() {
 $("#editProfileBtn")?.addEventListener("click", async () => {
     if (!dadosPerfil) return;
 
-    const nome = prompt("Qual nome deseja usar?", dadosPerfil.name || "");
+    const nome = prompt(
+        "Qual nome deseja usar?",
+        dadosPerfil.name || ""
+    );
+
     if (nome === null) return;
 
-    const bio = prompt("Escreva sua biografia:", dadosPerfil.bio || "");
+    const bio = prompt(
+        "Escreva sua biografia:",
+        dadosPerfil.bio || ""
+    );
+
     if (bio === null) return;
 
-    const sobre = prompt("Conte um pouco sobre você:", dadosPerfil.about || "");
+    const sobre = prompt(
+        "Conte um pouco sobre você:",
+        dadosPerfil.about || ""
+    );
+
     if (sobre === null) return;
 
     try {
@@ -201,6 +318,8 @@ $("#editProfileBtn")?.addEventListener("click", async () => {
         });
 
         renderizarPerfil();
+
+        alert("Perfil atualizado com sucesso!");
     } catch (erro) {
         console.error(erro);
         alert("Não foi possível salvar seu perfil.");
@@ -209,92 +328,154 @@ $("#editProfileBtn")?.addEventListener("click", async () => {
 
 // FOTO DE PERFIL
 $("#previewPhotoBtn")?.addEventListener("click", () => {
-    const url = imagemSegura($("#photoUrlInput")?.value.trim());
+    const url = imagemSegura(
+        $("#photoUrlInput")?.value.trim()
+    );
 
     if (!url) {
-        mensagem("#photoMessage", "Insira um link HTTPS válido.");
+        mensagem(
+            "#photoMessage",
+            "Insira um link HTTPS válido."
+        );
         return;
     }
 
     const preview = $("#photoPreview");
+
     preview.src = url;
     preview.hidden = false;
+
     mensagem("#photoMessage", "Prévia carregada.");
 });
 
 $("#savePhotoBtn")?.addEventListener("click", async () => {
-    const url = imagemSegura($("#photoUrlInput")?.value.trim());
+    const url = imagemSegura(
+        $("#photoUrlInput")?.value.trim()
+    );
 
     if (!url) {
-        mensagem("#photoMessage", "Insira um link HTTPS válido.");
+        mensagem(
+            "#photoMessage",
+            "Insira um link HTTPS válido."
+        );
         return;
     }
 
     try {
-        await salvarDados({ photoURL: url });
+        await salvarDados({
+            photoURL: url
+        });
+
         renderizarPerfil();
-        mensagem("#photoMessage", "Foto salva com sucesso!");
+
+        mensagem(
+            "#photoMessage",
+            "Foto salva e sincronizada com as mensagens!"
+        );
     } catch (erro) {
         console.error(erro);
-        mensagem("#photoMessage", "Não foi possível salvar a foto.");
+
+        mensagem(
+            "#photoMessage",
+            "Não foi possível salvar a foto."
+        );
     }
 });
 
 // CAPA
 $("#previewCoverBtn")?.addEventListener("click", () => {
-    const url = imagemSegura($("#coverUrlInput")?.value.trim());
+    const url = imagemSegura(
+        $("#coverUrlInput")?.value.trim()
+    );
 
     if (!url) {
-        mensagem("#coverMessage", "Insira um link HTTPS válido.");
+        mensagem(
+            "#coverMessage",
+            "Insira um link HTTPS válido."
+        );
         return;
     }
 
     const preview = $("#coverPreview");
+
     preview.src = url;
     preview.hidden = false;
+
     mensagem("#coverMessage", "Prévia carregada.");
 });
 
 $("#saveCoverBtn")?.addEventListener("click", async () => {
-    const url = imagemSegura($("#coverUrlInput")?.value.trim());
+    const url = imagemSegura(
+        $("#coverUrlInput")?.value.trim()
+    );
 
     if (!url) {
-        mensagem("#coverMessage", "Insira um link HTTPS válido.");
+        mensagem(
+            "#coverMessage",
+            "Insira um link HTTPS válido."
+        );
         return;
     }
 
     try {
-        await salvarDados({ coverURL: url });
+        await salvarDados({
+            coverURL: url
+        });
+
         renderizarPerfil();
+
         mensagem("#coverMessage", "Capa salva com sucesso!");
     } catch (erro) {
         console.error(erro);
-        mensagem("#coverMessage", "Não foi possível salvar a capa.");
+
+        mensagem(
+            "#coverMessage",
+            "Não foi possível salvar a capa."
+        );
     }
 });
 
 // PREFERÊNCIAS
 $("#savePreferencesBtn")?.addEventListener("click", async () => {
     const status = $("#statusSelect")?.value || "offline";
+
     const platform = $("#platformSelect")?.value || "";
-    const accentColor = $("#accentColor")?.value || "#ff7a18";
+
+    const accentColor =
+        $("#accentColor")?.value || "#ff7a18";
 
     try {
-        await salvarDados({ status, platform, accentColor });
+        await salvarDados({
+            status,
+            platform,
+            accentColor
+        });
 
-        document.documentElement.style.setProperty("--accent", accentColor);
+        document.documentElement.style.setProperty(
+            "--accent",
+            accentColor
+        );
 
         renderizarPerfil();
-        mensagem("#preferencesMessage", "Preferências salvas!");
+
+        mensagem(
+            "#preferencesMessage",
+            "Preferências salvas e sincronizadas!"
+        );
     } catch (erro) {
         console.error(erro);
-        mensagem("#preferencesMessage", "Erro ao salvar preferências.");
+
+        mensagem(
+            "#preferencesMessage",
+            "Erro ao salvar preferências."
+        );
     }
 });
 
 // JOGOS FAVORITOS
 function renderizarJogos() {
     const container = $("#favoriteGames");
+
     if (!container) return;
 
     container.replaceChildren();
@@ -310,36 +491,55 @@ function renderizarJogos() {
 
     jogos.forEach((jogo, indice) => {
         const card = document.createElement("div");
+
         card.className = "game-card";
 
-        const nome = typeof jogo === "string" ? jogo : jogo.name;
-        const imagem = typeof jogo === "object" ? imagemSegura(jogo.imageURL) : "";
+        const nome =
+            typeof jogo === "string"
+                ? jogo
+                : jogo.name;
+
+        const imagem =
+            typeof jogo === "object"
+                ? imagemSegura(jogo.imageURL)
+                : "";
 
         if (imagem) {
             const img = document.createElement("img");
+
             img.src = imagem;
             img.alt = nome || "Jogo favorito";
             img.loading = "lazy";
+
             card.appendChild(img);
         } else {
             const placeholder = document.createElement("div");
+
             placeholder.className = "game-placeholder";
             placeholder.textContent = "🎮";
+
             card.appendChild(placeholder);
         }
 
         const titulo = document.createElement("p");
+
         titulo.textContent = nome || "Jogo";
+
         card.appendChild(titulo);
 
         const remover = document.createElement("button");
+
         remover.type = "button";
         remover.className = "remove-game";
         remover.textContent = "×";
         remover.setAttribute("aria-label", "Remover jogo");
-        remover.addEventListener("click", () => removerJogo(indice));
+
+        remover.addEventListener("click", () => {
+            removerJogo(indice);
+        });
 
         card.appendChild(remover);
+
         container.appendChild(card);
     });
 }
@@ -348,19 +548,29 @@ $("#addGameBtn")?.addEventListener("click", async () => {
     if (!dadosPerfil) return;
 
     const nome = $("#gameNameInput")?.value.trim();
-    const imagemInformada = $("#gameImageInput")?.value.trim();
+
+    const imagemInformada =
+        $("#gameImageInput")?.value.trim();
 
     if (!nome) {
         mensagem("#gamesMessage", "Digite o nome do jogo.");
         return;
     }
 
-    if (imagemInformada && !imagemSegura(imagemInformada)) {
-        mensagem("#gamesMessage", "O link da imagem precisa ser HTTPS.");
+    if (
+        imagemInformada &&
+        !imagemSegura(imagemInformada)
+    ) {
+        mensagem(
+            "#gamesMessage",
+            "O link da imagem precisa ser HTTPS."
+        );
         return;
     }
 
-    const jogos = [...(dadosPerfil.favoriteGames || [])];
+    const jogos = [
+        ...(dadosPerfil.favoriteGames || [])
+    ];
 
     jogos.push({
         name: nome,
@@ -368,30 +578,48 @@ $("#addGameBtn")?.addEventListener("click", async () => {
     });
 
     try {
-        await salvarDados({ favoriteGames: jogos });
+        await salvarDados({
+            favoriteGames: jogos
+        });
 
         $("#gameNameInput").value = "";
         $("#gameImageInput").value = "";
 
         renderizarJogos();
+
         mensagem("#gamesMessage", "Jogo adicionado!");
     } catch (erro) {
         console.error(erro);
-        mensagem("#gamesMessage", "Não foi possível adicionar o jogo.");
+
+        mensagem(
+            "#gamesMessage",
+            "Não foi possível adicionar o jogo."
+        );
     }
 });
 
 async function removerJogo(indice) {
-    const jogos = [...(dadosPerfil.favoriteGames || [])];
+    const jogos = [
+        ...(dadosPerfil.favoriteGames || [])
+    ];
+
     jogos.splice(indice, 1);
 
     try {
-        await salvarDados({ favoriteGames: jogos });
+        await salvarDados({
+            favoriteGames: jogos
+        });
+
         renderizarJogos();
+
         mensagem("#gamesMessage", "Jogo removido.");
     } catch (erro) {
         console.error(erro);
-        mensagem("#gamesMessage", "Não foi possível remover o jogo.");
+
+        mensagem(
+            "#gamesMessage",
+            "Não foi possível remover o jogo."
+        );
     }
 }
 
@@ -399,54 +627,79 @@ async function removerJogo(indice) {
 function renderizarEmblemas() {
     const selecionados = dadosPerfil.badges || [];
 
-    document.querySelectorAll("#badgesList input[type='checkbox']").forEach((checkbox) => {
-        checkbox.checked = selecionados.includes(checkbox.value);
+    document.querySelectorAll(
+        "#badgesList input[type='checkbox']"
+    ).forEach((checkbox) => {
+        checkbox.checked = selecionados.includes(
+            checkbox.value
+        );
     });
 }
 
 $("#saveBadgesBtn")?.addEventListener("click", async () => {
     const badges = Array.from(
-        document.querySelectorAll("#badgesList input[type='checkbox']:checked")
+        document.querySelectorAll(
+            "#badgesList input[type='checkbox']:checked"
+        )
     ).map((checkbox) => checkbox.value);
 
     try {
-        await salvarDados({ badges });
+        await salvarDados({
+            badges
+        });
+
         mensagem("#badgesMessage", "Emblemas salvos!");
     } catch (erro) {
         console.error(erro);
-        mensagem("#badgesMessage", "Não foi possível salvar os emblemas.");
+
+        mensagem(
+            "#badgesMessage",
+            "Não foi possível salvar os emblemas."
+        );
     }
 });
 
-// PUBLICAÇÕES POR LINK DE IMAGEM
+// PUBLICAÇÕES
 function renderizarPublicacoes() {
     const container = $("#postsList");
+
     if (!container) return;
 
     container.replaceChildren();
 
-    const posts = Array.isArray(dadosPerfil.posts) ? dadosPerfil.posts : [];
+    const posts = Array.isArray(dadosPerfil.posts)
+        ? dadosPerfil.posts
+        : [];
 
     if (!posts.length) {
         const vazio = document.createElement("p");
+
         vazio.className = "empty-message";
         vazio.textContent = "Nenhuma publicação ainda.";
+
         container.appendChild(vazio);
+
         return;
     }
 
     [...posts].reverse().forEach((post) => {
         const artigo = document.createElement("article");
+
         artigo.className = "post-card";
 
         const autor = document.createElement("div");
+
         autor.className = "post-author";
 
         const nomeAutor = document.createElement("strong");
-        nomeAutor.textContent = post.author || dadosPerfil.name || "Jogador";
+
+        nomeAutor.textContent =
+            post.author || dadosPerfil.name || "Jogador";
+
         autor.appendChild(nomeAutor);
 
         const texto = document.createElement("p");
+
         texto.className = "post-text";
         texto.textContent = post.text || "";
 
@@ -456,10 +709,12 @@ function renderizarPublicacoes() {
 
         if (imagemUrl) {
             const imagem = document.createElement("img");
+
             imagem.className = "post-image";
             imagem.src = imagemUrl;
             imagem.alt = "Imagem da publicação";
             imagem.loading = "lazy";
+
             artigo.appendChild(imagem);
         }
 
@@ -471,19 +726,32 @@ $("#publishPostBtn")?.addEventListener("click", async () => {
     if (!dadosPerfil) return;
 
     const texto = $("#postTextInput")?.value.trim();
-    const imagemInformada = $("#postImageInput")?.value.trim();
+
+    const imagemInformada =
+        $("#postImageInput")?.value.trim();
 
     if (!texto && !imagemInformada) {
-        mensagem("#postMessage", "Escreva algo ou adicione um link de imagem.");
+        mensagem(
+            "#postMessage",
+            "Escreva algo ou adicione um link de imagem."
+        );
         return;
     }
 
-    if (imagemInformada && !imagemSegura(imagemInformada)) {
-        mensagem("#postMessage", "O link da imagem precisa ser HTTPS.");
+    if (
+        imagemInformada &&
+        !imagemSegura(imagemInformada)
+    ) {
+        mensagem(
+            "#postMessage",
+            "O link da imagem precisa ser HTTPS."
+        );
         return;
     }
 
-    const posts = [...(dadosPerfil.posts || [])];
+    const posts = [
+        ...(dadosPerfil.posts || [])
+    ];
 
     posts.push({
         text: texto,
@@ -502,11 +770,20 @@ $("#publishPostBtn")?.addEventListener("click", async () => {
         $("#postImageInput").value = "";
 
         renderizarPublicacoes();
-        atualizarTexto("#postsCount", posts.length);
+
+        atualizarTexto(
+            "#postsCount",
+            posts.length
+        );
+
         mensagem("#postMessage", "Publicação criada!");
     } catch (erro) {
         console.error(erro);
-        mensagem("#postMessage", "Não foi possível publicar.");
+
+        mensagem(
+            "#postMessage",
+            "Não foi possível publicar."
+        );
     }
 });
 
@@ -514,24 +791,37 @@ $("#publishPostBtn")?.addEventListener("click", async () => {
 const themeToggle = $("#themeToggle");
 
 function aplicarTema(tema) {
-    document.body.classList.toggle("light-theme", tema === "light");
+    document.body.classList.toggle(
+        "light-theme",
+        tema === "light"
+    );
+
+    document.body.classList.toggle(
+        "light-mode",
+        tema === "light"
+    );
 
     if (themeToggle) {
-        themeToggle.textContent = tema === "light"
-            ? "🌙 Modo escuro"
-            : "☀️ Modo claro";
+        themeToggle.textContent =
+            tema === "light"
+                ? "🌙 Modo escuro"
+                : "☀️ Modo claro";
     }
 }
 
 const temaSalvo = localStorage.getItem("tema") || "dark";
+
 aplicarTema(temaSalvo);
 
 themeToggle?.addEventListener("click", () => {
-    const novoTema = document.body.classList.contains("light-theme")
-        ? "dark"
-        : "light";
+    const novoTema =
+        document.body.classList.contains("light-theme") ||
+        document.body.classList.contains("light-mode")
+            ? "dark"
+            : "light";
 
     localStorage.setItem("tema", novoTema);
+
     aplicarTema(novoTema);
 });
 
@@ -539,9 +829,11 @@ themeToggle?.addEventListener("click", () => {
 $("#logoutBtn")?.addEventListener("click", async () => {
     try {
         await signOut(auth);
+
         window.location.replace("index.html");
     } catch (erro) {
         console.error(erro);
+
         alert("Não foi possível sair da conta.");
     }
 });
@@ -549,14 +841,17 @@ $("#logoutBtn")?.addEventListener("click", async () => {
 // AUTENTICAÇÃO
 async function iniciarAutenticacao() {
     try {
-        await setPersistence(auth, browserLocalPersistence);
+        await setPersistence(
+            auth,
+            browserLocalPersistence
+        );
 
         onAuthStateChanged(auth, async (user) => {
             if (!user) {
-                // Só redireciona depois da verificação inicial do Firebase.
                 if (!perfilCarregado) {
                     window.location.replace("index.html");
                 }
+
                 return;
             }
 
@@ -565,13 +860,25 @@ async function iniciarAutenticacao() {
             try {
                 await carregarPerfil(user);
             } catch (erro) {
-                console.error("Erro ao carregar perfil:", erro);
-                alert("Não foi possível carregar os dados do perfil. Verifique as regras do Firestore.");
+                console.error(
+                    "Erro ao carregar ou sincronizar perfil:",
+                    erro
+                );
+
+                alert(
+                    "Não foi possível carregar ou sincronizar seu perfil. Verifique as regras do Firestore."
+                );
             }
         });
     } catch (erro) {
-        console.error("Erro ao iniciar autenticação:", erro);
-        alert("Não foi possível verificar sua sessão. Confira a configuração do Firebase.");
+        console.error(
+            "Erro ao iniciar autenticação:",
+            erro
+        );
+
+        alert(
+            "Não foi possível verificar sua sessão. Confira a configuração do Firebase."
+        );
     }
 }
 

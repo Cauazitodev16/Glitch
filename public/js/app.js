@@ -162,7 +162,7 @@ async function fazerCadastro() {
     }
 }
 
-const registerBtn = document.querySelector("#registerBtn");
+const registerBtn = document.querySelector("#btnCadastro");
 
 if (registerBtn) {
     registerBtn.addEventListener("click", fazerCadastro);

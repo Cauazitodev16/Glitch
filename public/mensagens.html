@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mensagens | Glitch</title>
+    <link rel="stylesheet" href="css/mensagens.css">
+</head>
+<body>
+
+    <aside class="sidebar">
+        <a class="logo-mini" href="home.html" title="Glitch">
+            <img src="assets/logo-glitch.png" alt="Glitch">
+        </a>
+
+        <a class="nav-icon" href="home.html" title="Home" aria-label="Home">
+            <svg viewBox="0 0 24 24">
+                <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/>
+            </svg>
+        </a>
+
+        <a class="nav-icon" href="lobbies.html" title="Lobbies" aria-label="Lobbies">
+            <svg viewBox="0 0 24 24">
+                <path d="M6 11h4m-2-2v4m8-2h.01M19 8h.01M5 6h14a3 3 0 0 1 2.8 4l-2 6a3 3 0 0 1-4.5 1.5L12 15l-3.3 2.5A3 3 0 0 1 4.2 16l-2-6A3 3 0 0 1 5 6z"/>
+            </svg>
+        </a>
+
+        <a class="nav-icon" href="social.html" title="Área Social" aria-label="Área Social">
+            <svg viewBox="0 0 24 24">
+                <path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 9 9 0 0 1-4-.9L3 21l1.9-4.8a9 9 0 0 1-.9-4.2A8.5 8.5 0 0 1 12.5 3h.5a8.5 8.5 0 0 1 8 8z"/>
+            </svg>
+        </a>
+
+        <a class="nav-icon active" href="mensagens.html" title="Mensagens" aria-label="Mensagens">
+            <svg viewBox="0 0 24 24">
+                <path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 9 9 0 0 1-4-.9L3 21l1.9-4.8a9 9 0 0 1-.9-4.2A8.5 8.5 0 0 1 12.5 3h.5a8.5 8.5 0 0 1 8 8z"/>
+                <path d="M8 10h8M8 14h5"/>
+            </svg>
+        </a>
+
+        <a class="nav-icon" href="notificacoes.html" title="Notificações" aria-label="Notificações">
+            <svg viewBox="0 0 24 24">
+                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>
+            </svg>
+        </a>
+
+        <a class="nav-icon" href="configuracoes.html" title="Configurações" aria-label="Configurações">
+            <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.6a8 8 0 0 1-1.7 1l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.7-1l-1.7.6-1.4-2.4 1.4-1.1a8 8 0 0 1 0-2l-1.4-1.1 1.4-2.4 1.7.6a8 8 0 0 1 1.7-1l.3-1.8h2.8l.3 1.8a8 8 0 0 1 1.7 1l1.7-.6 1.4 2.4-1.4 1.1a8 8 0 0 1 0 2z"/>
+            </svg>
+        </a>
+
+        <a class="nav-icon" href="perfil.html" title="Perfil" aria-label="Perfil">
+            <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M4 21a8 8 0 0 1 16 0"/>
+            </svg>
+        </a>
+    </aside>
+
+    <main class="dashboard">
+        <header class="topbar">
+            <div>
+                <h1>Mensagens</h1>
+                <p>Converse com outros jogadores do Glitch.</p>
+            </div>
+        </header>
+
+        <section class="chat-container">
+
+            <aside class="chat-sidebar">
+                <div class="chat-sidebar-header">
+                    <h2>Conversas</h2>
+                </div>
+
+                <div class="user-search">
+                    <input
+                        type="search"
+                        id="userSearch"
+                        placeholder="Buscar jogadores..."
+                        autocomplete="off"
+                        maxlength="40"
+                    >
+                    <div id="searchResults" class="search-results"></div>
+                </div>
+
+                <div id="conversationList" class="conversation-list">
+                    <p class="empty-state">Carregando conversas...</p>
+                </div>
+            </aside>
+
+            <section class="chat-main">
+                <div id="chatEmpty" class="chat-empty">
+                    <div class="empty-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 9 9 0 0 1-4-.9L3 21l1.9-4.8a9 9 0 0 1-.9-4.2A8.5 8.5 0 0 1 12.5 3h.5a8.5 8.5 0 0 1 8 8z"/>
+                            <path d="M8 10h8M8 14h5"/>
+                        </svg>
+                    </div>
+                    <h2>Suas conversas</h2>
+                    <p>Escolha um jogador ou pesquise alguém para começar a conversar.</p>
+                </div>
+
+                <div id="chatActive" class="chat-active" hidden>
+                    <header class="chat-header">
+                        <img id="chatAvatar" src="" alt="Foto do jogador">
+                        <div>
+                            <h2 id="chatName">Jogador</h2>
+                            <span>Conversa privada</span>
+                        </div>
+                    </header>
+
+                    <div id="messagesList" class="messages-list">
+                        <p class="empty-state">Carregando mensagens...</p>
+                    </div>
+
+                    <form id="messageForm" class="message-form">
+                        <input
+                            type="text"
+                            id="messageInput"
+                            placeholder="Escreva sua mensagem..."
+                            maxlength="2000"
+                            autocomplete="off"
+                            required
+                        >
+                        <button type="submit" id="sendMessageBtn" aria-label="Enviar mensagem">
+                            <svg viewBox="0 0 24 24">
+                                <path d="m22 2-7 20-4-9-9-4z"/>
+                                <path d="M22 2 11 13"/>
+                            </svg>
+                        </button>
+                    </form>
+                    <p id="messageStatus" class="message-status" aria-live="polite"></p>
+                </div>
+            </section>
+
+        </section>
+    </main>
+
+    <script type="module" src="js/mensagens.js"></script>
+</body>
+</html>
