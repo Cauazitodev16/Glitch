@@ -1,0 +1,318 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil do jogador | Glitch</title>
+    <link rel="stylesheet" href="css/perfil.css">
+
+    <style>
+        .public-profile {
+            width: min(1150px, calc(100vw - var(--sidebar-width) - 60px));
+        }
+
+        .public-main .user-details {
+            padding-top: 48px;
+        }
+
+        .public-main .avatar {
+            flex-shrink: 0;
+        }
+
+        .public-main .user-details {
+            flex: 1;
+        }
+
+        .public-profile .profile-header {
+            margin-bottom: 20px;
+        }
+
+        .public-profile .profile-card {
+            margin-bottom: 15px;
+        }
+
+        .public-profile .profile-meta {
+            margin-top: 12px;
+        }
+
+        .public-profile .public-game-card {
+            overflow: hidden;
+            border: 1px solid var(--border);
+            background: var(--surface-2);
+            border-radius: 11px;
+        }
+
+        .public-profile .public-game-card img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .public-profile .public-game-card p {
+            padding: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            overflow-wrap: anywhere;
+        }
+
+        .public-profile .favorite-games {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 13px;
+        }
+
+        .public-profile .badges-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .public-profile .badge-option span {
+            cursor: default;
+        }
+
+        .public-profile .post-card {
+            padding: 17px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .public-profile .post-card:last-child {
+            border-bottom: 0;
+        }
+
+        .public-profile .post-author {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .public-profile .post-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: var(--surface-2);
+        }
+
+        .public-profile .post-author strong {
+            font-size: 13px;
+        }
+
+        .public-profile .post-text {
+            line-height: 1.6;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        .public-profile .post-image {
+            display: block;
+            width: 100%;
+            max-height: 420px;
+            object-fit: contain;
+            margin-top: 13px;
+            border-radius: 11px;
+            background: var(--surface-2);
+        }
+
+        .public-profile .public-message {
+            color: var(--muted);
+            text-align: center;
+            padding: 30px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+        }
+
+        .public-profile .back-button {
+            display: inline-block;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            border-radius: 10px;
+            padding: 10px 14px;
+            transition: .2s;
+        }
+
+        .public-profile .back-button:hover {
+            border-color: var(--accent);
+        }
+
+        @media (max-width: 850px) {
+            .public-profile {
+                width: calc(100vw - var(--sidebar-width) - 40px);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .public-profile {
+                width: calc(100vw - var(--sidebar-width) - 24px);
+            }
+
+            .public-profile .profile-main {
+                flex-wrap: wrap;
+                gap: 12px;
+                margin-top: -40px;
+            }
+
+            .public-profile .avatar {
+                width: 85px;
+                height: 85px;
+                font-size: 29px;
+            }
+
+            .public-profile .public-main .user-details {
+                padding-top: 42px;
+                flex-basis: calc(100% - 105px);
+            }
+
+            .public-profile .user-details h1 {
+                font-size: 19px;
+            }
+
+            .public-profile .user-details > p {
+                font-size: 12px;
+            }
+
+            .public-profile .profile-info {
+                padding: 0 15px 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <aside class="sidebar">
+        <a class="logo-mini" href="home.html" title="Glitch">
+            <img src="assets/logo-glitch.png" alt="Glitch">
+        </a>
+
+        <a class="nav-icon" href="home.html" title="Home" aria-label="Home">
+            <svg viewBox="0 0 24 24">
+                <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/>
+            </svg>
+        </a>
+
+        <a class="nav-icon" href="lobbies.html" title="Lobbies" aria-label="Lobbies">
+            <svg viewBox="0 0 24 24">
+                <path d="M6 11h4m-2-2v4m8-2h.01M19 8h.01M5 6h14a3 3 0 0 1 2.8 4l-2 6a3 3 0 0 1-4.5 1.5L12 15l-3.3 2.5A3 3 0 0 1 4.2 16l-2-6A3 3 0 0 1 5 6z"/>
+            </svg>
+        </a>
+
+        <a class="nav-icon" href="social.html" title="Área Social" aria-label="Área Social">
+            <svg viewBox="0 0 24 24">
+                <path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 9 9 0 0 1-4-.9L3 21l1.9-4.8a9 9 0 0 1-.9-4.2A8.5 8.5 0 0 1 12.5 3h.5a8.5 8.5 0 0 1 8 8z"/>
+            </svg>
+        </a>
+
+        <a class="nav-icon" href="notificacoes.html" title="Notificações" aria-label="Notificações">
+            <svg viewBox="0 0 24 24">
+                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>
+            </svg>
+        </a>
+
+        <a class="nav-icon" href="configuracoes.html" title="Configurações" aria-label="Configurações">
+            <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.6a8 8 0 0 1-1.7 1l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.7-1l-1.7.6-1.4-2.4 1.4-1.1a8 8 0 0 1 0-2l-1.4-1.1 1.4-2.4 1.7.6a8 8 0 0 1 1.7-1l.3-1.8h2.8l.3 1.8a8 8 0 0 1 1.7 1l1.7-.6 1.4 2.4a8 8 0 0 1 0 2z"/>
+            </svg>
+        </a>
+
+        <a class="nav-icon profile-icon" href="perfil.html" title="Meu perfil" aria-label="Meu perfil">
+            <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M4 21a8 8 0 0 1 16 0"/>
+            </svg>
+        </a>
+    </aside>
+
+    <main class="dashboard public-profile">
+        <header class="topbar">
+            <h2>Perfil do jogador</h2>
+            <a href="home.html" class="back-button">← Voltar para Home</a>
+        </header>
+
+        <div id="profileMessage" class="public-message">
+            Carregando perfil...
+        </div>
+
+        <div id="profileContent" hidden>
+            <section class="profile-header">
+                <div class="cover" id="publicCover"></div>
+
+                <div class="profile-info">
+                    <div class="profile-main public-main">
+                        <div class="avatar" id="publicAvatar">👤</div>
+
+                        <div class="user-details">
+                            <h1 id="publicName">Jogador</h1>
+                            <p id="publicBio"></p>
+
+                            <div class="profile-meta">
+                                <span id="publicStatus" class="status-badge status-offline">
+                                    ● Offline
+                                </span>
+
+                                <span id="publicPlatform" class="meta-badge">
+                                    🎮 Plataforma não definida
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="profile-stats">
+                <article class="stat">
+                    <h2 id="publicPostsCount">0</h2>
+                    <p>Publicações</p>
+                </article>
+
+                <article class="stat">
+                    <h2 id="publicFriendsCount">0</h2>
+                    <p>Amigos</p>
+                </article>
+
+                <article class="stat">
+                    <h2 id="publicEventsCount">0</h2>
+                    <p>Eventos</p>
+                </article>
+            </section>
+
+            <section class="profile-content">
+                <article class="profile-card">
+                    <h2>Sobre mim</h2>
+                    <p id="publicAbout">Ainda não adicionou informações.</p>
+                </article>
+
+                <article class="profile-card">
+                    <h2>Informações do jogador</h2>
+                    <div class="settings-list">
+                        <p id="publicPlatformInfo">🎮 Plataforma não definida</p>
+                        <p id="publicStatusInfo">● Offline</p>
+                    </div>
+                </article>
+            </section>
+
+            <section class="profile-card games-section">
+                <h2>Jogos favoritos</h2>
+                <div id="publicGames" class="favorite-games"></div>
+            </section>
+
+            <section class="profile-card badges-section">
+                <h2>Emblemas</h2>
+                <div id="publicBadges" class="badges-list"></div>
+            </section>
+
+            <section class="profile-card publications">
+                <h2>Publicações</h2>
+                <div id="publicPosts"></div>
+            </section>
+        </div>
+    </main>
+
+    <script type="module" src="js/perfil-publico.js"></script>
+</body>
+</html>

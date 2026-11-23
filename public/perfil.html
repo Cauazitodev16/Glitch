@@ -4,201 +4,304 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Glitch - Meu Perfil</title>
+    <title>Meu Perfil | Glitch</title>
     <link rel="stylesheet" href="css/perfil.css">
 </head>
 <body>
-
     <aside class="sidebar">
-        <div class="logo-mini">
+        <a class="logo-mini" href="home.html" title="Glitch">
             <img src="assets/logo-glitch.png" alt="Glitch">
-        </div>
+        </a>
 
-        <a href="home.html" title="Home">🏠</a>
-        <a href="#" title="Lobbies">🎮</a>
-        <a href="#" title="Área Social">💬</a>
-        <a href="#" title="Notificações">🔔</a>
-        <a href="#" title="Configurações">⚙️</a>
+        <a class="nav-icon" href="home.html" aria-label="Home" title="Home">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/>
+            </svg>
+        </a>
 
-        <div class="profile-icon">
-            <a href="perfil.html" title="Meu perfil">👤</a>
-        </div>
+        <a class="nav-icon" href="lobbies.html" aria-label="Lobbies" title="Lobbies">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 11h4m-2-2v4m8-2h.01M19 8h.01M5 6h14a3 3 0 0 1 2.8 4l-2 6a3 3 0 0 1-4.5 1.5L12 15l-3.3 2.5A3 3 0 0 1 4.2 16l-2-6A3 3 0 0 1 5 6z"/>
+            </svg>
+        </a>
+
+        <a class="nav-icon" href="social.html" aria-label="Área Social" title="Área Social">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 9 9 0 0 1-4-.9L3 21l1.9-4.8a9 9 0 0 1-.9-4.2A8.5 8.5 0 0 1 12.5 3h.5a8.5 8.5 0 0 1 8 8z"/>
+            </svg>
+        </a>
+
+        <a class="nav-icon" href="notificacoes.html" aria-label="Notificações" title="Notificações">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>
+            </svg>
+        </a>
+
+        <a class="nav-icon" href="configuracoes.html" aria-label="Configurações" title="Configurações">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.6a8 8 0 0 1-1.7 1l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.7-1l-1.7.6-1.4-2.4 1.4-1.1a8 8 0 0 1 0-2l-1.4-1.1 1.4-2.4 1.7.6a8 8 0 0 1 1.7-1l.3-1.8h2.8l.3 1.8a8 8 0 0 1 1.7 1l1.7-.6 1.4 2.4-1.4 1.1a8 8 0 0 1 0 2z"/>
+            </svg>
+        </a>
+
+        <a class="nav-icon profile-icon active" href="perfil.html" aria-label="Perfil" title="Perfil">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M4 21a8 8 0 0 1 16 0"/>
+            </svg>
+        </a>
     </aside>
 
     <main class="dashboard">
-
         <header class="topbar">
             <h2>Meu Perfil</h2>
-
-            <button id="themeToggle" class="theme-toggle">
+            <button id="themeToggle" class="theme-toggle" type="button">
                 ☀️ Modo claro
             </button>
         </header>
 
-        <!-- CABEÇALHO DO PERFIL -->
         <section class="profile-header">
-
-            <!-- CAPA -->
             <div class="cover" id="cover"></div>
 
-            <!-- INFORMAÇÕES PRINCIPAIS -->
             <div class="profile-info">
-
                 <div class="profile-main">
-
-                    <div class="avatar" id="avatar">
-                        👤
-                    </div>
+                    <div class="avatar" id="avatar">👤</div>
 
                     <div class="user-details">
                         <h1 id="username">Carregando...</h1>
+                        <p id="userBio">Carregando perfil...</p>
 
-                        <p id="userBio">
-                            Adicione uma biografia ao seu perfil.
-                        </p>
+                        <div class="profile-meta">
+                            <span id="statusBadge" class="status-badge status-offline">
+                                ● Offline
+                            </span>
+
+                            <span id="platformBadge" class="meta-badge">
+                                🎮 Plataforma não definida
+                            </span>
+                        </div>
                     </div>
 
-                    <button id="editProfileBtn" class="edit-button">
+                    <button id="editProfileBtn" class="edit-button" type="button">
                         Editar perfil
                     </button>
-
                 </div>
 
-                <!-- EDITOR DA CAPA -->
-                <details class="cover-editor">
-                    <summary>🖼️ Alterar capa do perfil</summary>
-
-                    <div class="editor-content">
-
-                        <label for="coverUrlInput">
-                            Link da imagem:
-                        </label>
-
-                        <input
-                            type="url"
-                            id="coverUrlInput"
-                            placeholder="https://exemplo.com/imagem.jpg"
-                        >
-
-                        <div class="cover-actions">
-                            <button type="button" id="previewCoverBtn">
-                                Visualizar
-                            </button>
-
-                            <button type="button" id="saveCoverBtn">
-                                Salvar capa
-                            </button>
-                        </div>
-
-                        <img
-                            id="coverPreview"
-                            alt="Prévia da capa"
-                            hidden
-                        >
-
-                        <p id="coverMessage"></p>
-
-                    </div>
-                </details>
-
-                <!-- EDITOR DA FOTO -->
                 <details class="photo-editor">
-                    <summary>📷 Alterar foto de perfil</summary>
+                    <summary>Alterar foto de perfil</summary>
 
                     <div class="editor-content">
-
-                        <label for="photoUrlInput">
-                            Link da imagem:
-                        </label>
-
+                        <label for="photoUrlInput">Link HTTPS da imagem</label>
                         <input
-                            type="url"
                             id="photoUrlInput"
+                            type="url"
                             placeholder="https://exemplo.com/foto.png"
                         >
 
                         <div class="photo-actions">
-                            <button type="button" id="previewPhotoBtn">
-                                Visualizar
-                            </button>
-
-                            <button type="button" id="savePhotoBtn">
-                                Salvar foto
-                            </button>
+                            <button id="previewPhotoBtn" type="button">Visualizar</button>
+                            <button id="savePhotoBtn" type="button">Salvar foto</button>
                         </div>
 
-                        <img
-                            id="photoPreview"
-                            alt="Prévia da foto"
-                            hidden
-                        >
-
-                        <p id="photoMessage"></p>
-
+                        <img id="photoPreview" alt="Prévia da foto" hidden>
+                        <p id="photoMessage" class="message" aria-live="polite"></p>
                     </div>
                 </details>
 
-            </div>
+                <details class="cover-editor">
+                    <summary>Personalizar capa</summary>
 
+                    <div class="editor-content">
+                        <label for="coverUrlInput">Link HTTPS da capa</label>
+                        <input
+                            id="coverUrlInput"
+                            type="url"
+                            placeholder="https://exemplo.com/capa.jpg"
+                        >
+
+                        <div class="cover-actions">
+                            <button id="previewCoverBtn" type="button">Visualizar</button>
+                            <button id="saveCoverBtn" type="button">Salvar capa</button>
+                        </div>
+
+                        <img id="coverPreview" alt="Prévia da capa" hidden>
+                        <p id="coverMessage" class="message" aria-live="polite"></p>
+                    </div>
+                </details>
+            </div>
         </section>
 
-        <!-- ESTATÍSTICAS -->
         <section class="profile-stats">
-
-            <div class="stat">
+            <article class="stat">
                 <h2 id="postsCount">0</h2>
                 <p>Publicações</p>
-            </div>
+            </article>
 
-            <div class="stat">
+            <article class="stat">
                 <h2 id="friendsCount">0</h2>
                 <p>Amigos</p>
-            </div>
+            </article>
 
-            <div class="stat">
+            <article class="stat">
                 <h2 id="eventsCount">0</h2>
                 <p>Eventos</p>
-            </div>
-
+            </article>
         </section>
 
-        <!-- INFORMAÇÕES DO PERFIL -->
         <section class="profile-content">
-
-            <div class="profile-card">
+            <article class="profile-card">
                 <h2>Sobre mim</h2>
+                <p id="aboutText">Ainda não adicionou informações.</p>
+            </article>
 
-                <p id="aboutText">
-                    Ainda não adicionou informações.
-                </p>
-            </div>
+            <article class="profile-card">
+                <h2>Meu setup gamer</h2>
 
-            <div class="profile-card">
-                <h2>Jogos favoritos</h2>
+                <div class="settings-list">
+                    <label for="statusSelect">Meu status</label>
+                    <select id="statusSelect">
+                        <option value="online">Disponível</option>
+                        <option value="away">Ausente</option>
+                        <option value="offline">Offline</option>
+                    </select>
 
-                <div id="favoriteGames" class="favorite-games">
-                    <span>Nenhum jogo adicionado.</span>
+                    <label for="platformSelect">Minha plataforma</label>
+                    <select id="platformSelect">
+                        <option value="">Selecione uma plataforma</option>
+                        <option value="PC">PC</option>
+                        <option value="PlayStation">PlayStation</option>
+                        <option value="Xbox">Xbox</option>
+                        <option value="Nintendo">Nintendo</option>
+                        <option value="Mobile">Mobile</option>
+                    </select>
+
+                    <label for="accentColor">Cor de destaque</label>
+                    <input id="accentColor" type="color" value="#ff7a18">
+
+                    <button id="savePreferencesBtn" type="button" class="primary-button">
+                        Salvar preferências
+                    </button>
+
+                    <p id="preferencesMessage" class="message" aria-live="polite"></p>
                 </div>
-            </div>
-
+            </article>
         </section>
 
-        <!-- PUBLICAÇÕES -->
-        <section class="publications">
+        <section class="profile-card games-section">
+            <h2>Jogos favoritos</h2>
 
-            <h2>Minhas publicações</h2>
+            <div id="favoriteGames" class="favorite-games">
+                <span>Nenhum jogo adicionado.</span>
+            </div>
+
+            <div class="add-game-form">
+                <input
+                    id="gameNameInput"
+                    type="text"
+                    maxlength="40"
+                    placeholder="Nome do jogo"
+                >
+
+                <input
+                    id="gameImageInput"
+                    type="url"
+                    placeholder="Link HTTPS da imagem (opcional)"
+                >
+
+                <button id="addGameBtn" type="button" class="primary-button">
+                    Adicionar jogo
+                </button>
+            </div>
+
+            <p id="gamesMessage" class="message" aria-live="polite"></p>
+        </section>
+
+        <section class="profile-card badges-section">
+            <h2>Emblemas</h2>
+
+            <p class="section-description">
+                Selecione as conquistas que deseja exibir no seu perfil.
+            </p>
+
+            <div id="badgesList" class="badges-list">
+                <label class="badge-option">
+                    <input type="checkbox" value="first_post">
+                    <span>✍️ Primeira publicação</span>
+                </label>
+
+                <label class="badge-option">
+                    <input type="checkbox" value="explorer">
+                    <span>🧭 Explorador</span>
+                </label>
+
+                <label class="badge-option">
+                    <input type="checkbox" value="team_player">
+                    <span>🤝 Espírito de equipe</span>
+                </label>
+
+                <label class="badge-option">
+                    <input type="checkbox" value="game_master">
+                    <span>🏆 Mestre dos jogos</span>
+                </label>
+
+                <label class="badge-option">
+                    <input type="checkbox" value="creator">
+                    <span>🎨 Criador</span>
+                </label>
+            </div>
+
+            <button id="saveBadgesBtn" type="button" class="primary-button">
+                Salvar emblemas
+            </button>
+
+            <p id="badgesMessage" class="message" aria-live="polite"></p>
+        </section>
+
+        <section class="profile-card publications">
+            <h2>Publicações</h2>
+
+            <div class="new-post">
+                <label for="postTextInput">Compartilhe uma novidade gamer</label>
+
+                <textarea
+                    id="postTextInput"
+                    rows="3"
+                    maxlength="500"
+                    placeholder="O que você está jogando?"
+                ></textarea>
+
+                <label for="postImageInput">Escolha uma imagem (opcional)</label>
+
+                <input
+                    id="postImageInput"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                >
+
+                <img
+                    id="postImagePreview"
+                    class="post-image-preview"
+                    alt="Prévia da imagem da publicação"
+                    hidden
+                >
+
+                <p class="file-help">
+                    JPG, PNG, WEBP ou GIF. Tamanho máximo: 5 MB.
+                </p>
+
+                <button id="publishPostBtn" type="button" class="primary-button">
+                    Publicar
+                </button>
+
+                <p id="postMessage" class="message" aria-live="polite"></p>
+            </div>
 
             <div id="postsList">
-                <p class="empty-message">
-                    Você ainda não possui publicações.
-                </p>
+                <p class="empty-message">Nenhuma publicação ainda.</p>
             </div>
-
         </section>
-
     </main>
 
     <script type="module" src="js/perfil.js"></script>
-
 </body>
 </html>

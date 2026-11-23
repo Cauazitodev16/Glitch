@@ -190,7 +190,7 @@ body {
 
 .event-list {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 18px;
 }
 
@@ -200,6 +200,8 @@ body {
     border-radius: 13px;
     padding: 12px;
     transition: 0.2s;
+    overflow: hidden;
+    min-width: 0;
 }
 
 .event-card:hover {
@@ -207,12 +209,16 @@ body {
     border-color: #ff7a18;
 }
 
+/* IMAGENS DOS JOGOS */
 .event-image {
+    display: block;
     width: 100%;
-    height: 120px;
+    height: 150px;
     border-radius: 9px;
-    background: linear-gradient(135deg, #34343f, #202029);
+    object-fit: cover;
+    object-position: center;
     margin-bottom: 13px;
+    background: linear-gradient(135deg, #34343f, #202029);
 }
 
 .event-card h3 {
@@ -228,6 +234,7 @@ body {
     color: white;
     cursor: pointer;
     font-weight: bold;
+    transition: 0.2s;
 }
 
 .event-card button:hover {
@@ -267,7 +274,7 @@ body {
     }
 
     .event-list {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
@@ -357,10 +364,6 @@ body.light-mode .post p {
     color: #62626c;
 }
 
-body.light-mode .event-image {
-    background: linear-gradient(135deg, #dedee5, #f2f2f5);
-}
-
 body.light-mode .theme-toggle {
     background: #ffffff;
     color: #292932;
@@ -370,4 +373,20 @@ body.light-mode .theme-toggle {
 body.light-mode .theme-toggle:hover {
     color: #ff7a18;
     border-color: #ff7a18;
+}
+
+/* RESPONSIVIDADE EXTRA */
+@media (max-width: 400px) {
+    .dashboard {
+        margin-left: 75px;
+        padding: 15px 10px;
+    }
+
+    .stats-area h1 {
+        font-size: 23px;
+    }
+
+    .event-image {
+        height: 180px;
+    }
 }

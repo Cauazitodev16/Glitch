@@ -1,536 +1,578 @@
 
-import {
-    initializeApp
-} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
 
 import {
     getAuth,
-    onAuthStateChanged
+    onAuthStateChanged,
+    signOut,
+    setPersistence,
+    browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
 
 import {
     getFirestore,
     doc,
     getDoc,
-    setDoc
+    setDoc,
+    updateDoc
 } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
-// FIREBASE
-
 const firebaseConfig = {
-    apiKey: "AIzaSyDdGZsfDOqY7xqI_Nd4pUc52PkXH0Hjt0g",
-    authDomain: "meetq-9b370.firebaseapp.com",
-    projectId: "meetq-9b370",
-    storageBucket: "meetq-9b370.firebasestorage.app",
-    messagingSenderId: "889397323612",
-    appId: "1:889397323612:web:fb375053f9cb15e7168399"
+  apiKey: "AIzaSyDdGZsfDOqY7xqI_Nd4pUc52PkXH0Hjt0g",
+  authDomain: "meetq-9b370.firebaseapp.com",
+  projectId: "meetq-9b370",
+  storageBucket: "meetq-9b370.firebasestorage.app",
+  messagingSenderId: "889397323612",
+  appId: "1:889397323612:web:fb375053f9cb15e7168399"
 };
+// Reutiliza o app Firebase, caso já exista.
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// ELEMENTOS DO PERFIL
-
-const username = document.getElementById("username");
-const userBio = document.getElementById("userBio");
-const aboutText = document.getElementById("aboutText");
-const favoriteGames = document.getElementById("favoriteGames");
-
-const editProfileBtn = document.getElementById("editProfileBtn");
-const themeToggle = document.getElementById("themeToggle");
-
-const avatar = document.getElementById("avatar");
-
-// ELEMENTOS DA FOTO
-
-const photoUrlInput = document.getElementById("photoUrlInput");
-const previewPhotoBtn = document.getElementById("previewPhotoBtn");
-const savePhotoBtn = document.getElementById("savePhotoBtn");
-const photoPreview = document.getElementById("photoPreview");
-const photoMessage = document.getElementById("photoMessage");
-
-// ELEMENTOS DA CAPA
-
-const cover = document.getElementById("cover");
-const coverUrlInput = document.getElementById("coverUrlInput");
-const previewCoverBtn = document.getElementById("previewCoverBtn");
-const saveCoverBtn = document.getElementById("saveCoverBtn");
-const coverPreview = document.getElementById("coverPreview");
-const coverMessage = document.getElementById("coverMessage");
-
 let usuarioAtual = null;
+let dadosPerfil = null;
+let perfilCarregado = false;
 
-// CARREGAR PERFIL
+const $ = (seletor) => document.querySelector(seletor);
 
-async function carregarPerfil(user) {
-    usuarioAtual = user;
+function mensagem(seletor, texto) {
+    const elemento = $(seletor);
+    if (elemento) elemento.textContent = texto;
+}
+
+function imagemSegura(url) {
+    if (!url || typeof url !== "string") return "";
 
     try {
-        const userRef = doc(db, "users", user.uid);
-        const userSnapshot = await getDoc(userRef);
-
-        const dados = userSnapshot.exists()
-            ? userSnapshot.data()
-            : {};
-
-        const nome = dados.displayName ||
-            user.displayName ||
-            user.email?.split("@")[0] ||
-            "Jogador";
-
-        const bio = dados.bio || "";
-
-        username.textContent = nome;
-
-        userBio.textContent = bio ||
-            "Adicione uma biografia ao seu perfil.";
-
-        aboutText.textContent = dados.about ||
-            bio ||
-            "Ainda não adicionou informações.";
-
-        document.getElementById("postsCount").textContent =
-            dados.postsCount || 0;
-
-        document.getElementById("friendsCount").textContent =
-            dados.friendsCount || 0;
-
-        document.getElementById("eventsCount").textContent =
-            dados.eventsCount || 0;
-
-        mostrarJogos(dados.favoriteGames || []);
-
-        // CARREGAR FOTO SALVA
-
-        const fotoSalva = dados.photoURL || "";
-
-        photoUrlInput.value = fotoSalva;
-        atualizarAvatar(fotoSalva);
-
-        // CARREGAR CAPA SALVA
-
-        const capaSalva = dados.coverURL || "";
-
-        coverUrlInput.value = capaSalva;
-        atualizarCapa(capaSalva);
-
-    } catch (error) {
-        console.error("Erro ao carregar perfil:", error);
-        alert("Não foi possível carregar seu perfil.");
+        const endereco = new URL(url);
+        return endereco.protocol === "https:" ? endereco.href : "";
+    } catch {
+        return "";
     }
 }
 
-// MOSTRAR JOGOS FAVORITOS
+function atualizarTexto(seletor, texto) {
+    const elemento = $(seletor);
+    if (elemento) elemento.textContent = texto ?? "";
+}
 
-function mostrarJogos(jogos) {
-    favoriteGames.innerHTML = "";
+function referenciaPerfil() {
+    return doc(db, "users", usuarioAtual.uid);
+}
 
-    if (!jogos.length) {
-        const mensagem = document.createElement("span");
-
-        mensagem.textContent = "Nenhum jogo adicionado.";
-
-        favoriteGames.appendChild(mensagem);
-        return;
+async function salvarDados(dados) {
+    if (!usuarioAtual || !dadosPerfil) {
+        throw new Error("Perfil ainda não carregado.");
     }
 
-    jogos.forEach((jogo) => {
-        const tag = document.createElement("span");
+    await updateDoc(referenciaPerfil(), dados);
+    Object.assign(dadosPerfil, dados);
+}
 
-        tag.className = "game-tag";
-        tag.textContent = jogo;
+// CARREGAR PERFIL
+async function carregarPerfil(user) {
+    const referencia = doc(db, "users", user.uid);
+    const resultado = await getDoc(referencia);
 
-        favoriteGames.appendChild(tag);
-    });
+    if (resultado.exists()) {
+        dadosPerfil = resultado.data();
+    } else {
+        dadosPerfil = {
+            uid: user.uid,
+            name: user.displayName || "Jogador",
+            email: user.email || "",
+            bio: "",
+            about: "",
+            photoURL: user.photoURL || "",
+            coverURL: "",
+            status: "offline",
+            platform: "",
+            accentColor: "#ff7a18",
+            favoriteGames: [],
+            badges: [],
+            posts: [],
+            postsCount: 0,
+            friendsCount: 0,
+            eventsCount: 0
+        };
+
+        await setDoc(referencia, dadosPerfil);
+    }
+
+    renderizarPerfil();
+    perfilCarregado = true;
+}
+
+// RENDERIZAR PERFIL
+function renderizarPerfil() {
+    if (!dadosPerfil) return;
+
+    atualizarTexto("#username", dadosPerfil.name || "Jogador");
+    atualizarTexto("#userBio", dadosPerfil.bio || "Adicione uma biografia.");
+    atualizarTexto("#aboutText", dadosPerfil.about || "Ainda não adicionou informações.");
+
+    const posts = Array.isArray(dadosPerfil.posts) ? dadosPerfil.posts : [];
+
+    atualizarTexto("#postsCount", dadosPerfil.postsCount ?? posts.length);
+    atualizarTexto("#friendsCount", dadosPerfil.friendsCount ?? 0);
+    atualizarTexto("#eventsCount", dadosPerfil.eventsCount ?? 0);
+
+    const status = dadosPerfil.status || "offline";
+    const statusBadge = $("#statusBadge");
+
+    if (statusBadge) {
+        const nomes = {
+            online: "● Disponível",
+            away: "● Ausente",
+            offline: "● Offline"
+        };
+
+        statusBadge.textContent = nomes[status] || "● Offline";
+        statusBadge.className = `status-badge status-${status}`;
+    }
+
+    const plataforma = dadosPerfil.platform || "";
+
+    atualizarTexto(
+        "#platformBadge",
+        plataforma ? `🎮 ${plataforma}` : "🎮 Plataforma não definida"
+    );
+
+    const avatar = $("#avatar");
+    const foto = imagemSegura(dadosPerfil.photoURL);
+
+    if (avatar) {
+        avatar.replaceChildren();
+
+        if (foto) {
+            const img = document.createElement("img");
+            img.src = foto;
+            img.alt = "Foto de perfil";
+            avatar.appendChild(img);
+        } else {
+            avatar.textContent = "👤";
+        }
+    }
+
+    const capa = imagemSegura(dadosPerfil.coverURL);
+    const cover = $("#cover");
+
+    if (cover) {
+        cover.style.backgroundImage = capa ? `url("${capa}")` : "";
+    }
+
+    if ($("#statusSelect")) $("#statusSelect").value = status;
+    if ($("#platformSelect")) $("#platformSelect").value = plataforma;
+
+    if ($("#accentColor")) {
+        $("#accentColor").value = dadosPerfil.accentColor || "#ff7a18";
+
+        document.documentElement.style.setProperty(
+            "--accent",
+            $("#accentColor").value
+        );
+    }
+
+    renderizarJogos();
+    renderizarEmblemas();
+    renderizarPublicacoes();
 }
 
 // EDITAR PERFIL
+$("#editProfileBtn")?.addEventListener("click", async () => {
+    if (!dadosPerfil) return;
 
-editProfileBtn.addEventListener("click", async () => {
-    if (!usuarioAtual) return;
+    const nome = prompt("Qual nome deseja usar?", dadosPerfil.name || "");
+    if (nome === null) return;
 
-    const nomeAtual = username.textContent;
+    const bio = prompt("Escreva sua biografia:", dadosPerfil.bio || "");
+    if (bio === null) return;
 
-    const bioAtual =
-        userBio.textContent === "Adicione uma biografia ao seu perfil."
-            ? ""
-            : userBio.textContent;
-
-    const jogosAtuais = Array.from(
-        favoriteGames.querySelectorAll(".game-tag")
-    ).map(tag => tag.textContent);
-
-    const novoNome = prompt(
-        "Qual nome deseja usar?",
-        nomeAtual
-    );
-
-    if (novoNome === null) return;
-
-    if (!novoNome.trim()) {
-        alert("O nome não pode ficar vazio.");
-        return;
-    }
-
-    const novaBio = prompt(
-        "Escreva sua biografia:",
-        bioAtual
-    );
-
-    if (novaBio === null) return;
-
-    const jogosTexto = prompt(
-        "Quais são seus jogos favoritos? Separe por vírgulas.",
-        jogosAtuais.join(", ")
-    );
-
-    if (jogosTexto === null) return;
-
-    const novosJogos = jogosTexto
-        .split(",")
-        .map(jogo => jogo.trim())
-        .filter(jogo => jogo.length > 0);
+    const sobre = prompt("Conte um pouco sobre você:", dadosPerfil.about || "");
+    if (sobre === null) return;
 
     try {
-        const userRef = doc(db, "users", usuarioAtual.uid);
-
-        await setDoc(userRef, {
-            displayName: novoNome.trim(),
-            bio: novaBio.trim(),
-            about: novaBio.trim(),
-            favoriteGames: novosJogos
-        }, { merge: true });
-
-        username.textContent = novoNome.trim();
-
-        userBio.textContent = novaBio.trim() ||
-            "Adicione uma biografia ao seu perfil.";
-
-        aboutText.textContent = novaBio.trim() ||
-            "Ainda não adicionou informações.";
-
-        mostrarJogos(novosJogos);
-
-        alert("Perfil atualizado com sucesso!");
-
-    } catch (error) {
-        console.error("Erro ao salvar perfil:", error);
-        alert("Não foi possível salvar as alterações.");
-    }
-});
-
-// VALIDAR LINK DA IMAGEM
-
-function validarLinkImagem(link) {
-    try {
-        const url = new URL(link);
-
-        return url.protocol === "https:" &&
-            link.length <= 2048;
-
-    } catch {
-        return false;
-    }
-}
-
-// ATUALIZAR FOTO DO PERFIL
-
-function atualizarAvatar(link) {
-    avatar.replaceChildren();
-
-    if (!link) {
-        avatar.textContent = "👤";
-        return;
-    }
-
-    const imagem = document.createElement("img");
-
-    imagem.src = link;
-    imagem.alt = "Foto de perfil";
-    imagem.referrerPolicy = "no-referrer";
-
-    imagem.onerror = () => {
-        avatar.replaceChildren();
-        avatar.textContent = "👤";
-    };
-
-    avatar.appendChild(imagem);
-}
-
-// VISUALIZAR FOTO ANTES DE SALVAR
-
-previewPhotoBtn.addEventListener("click", () => {
-    const link = photoUrlInput.value.trim();
-
-    if (!link) {
-        photoMessage.textContent =
-            "Cole o link de uma imagem primeiro.";
-
-        photoPreview.hidden = true;
-        return;
-    }
-
-    if (!validarLinkImagem(link)) {
-        photoMessage.textContent =
-            "Insira um link válido começando com https://";
-
-        photoPreview.hidden = true;
-        return;
-    }
-
-    photoMessage.textContent = "Carregando imagem...";
-
-    photoPreview.hidden = true;
-
-    const imagem = new Image();
-
-    imagem.onload = () => {
-        photoPreview.src = link;
-        photoPreview.hidden = false;
-
-        photoMessage.textContent = "Prévia carregada!";
-    };
-
-    imagem.onerror = () => {
-        photoPreview.hidden = true;
-
-        photoMessage.textContent =
-            "Não foi possível carregar essa imagem. Confira o link.";
-    };
-
-    imagem.src = link;
-});
-
-// SALVAR FOTO NO FIRESTORE
-
-savePhotoBtn.addEventListener("click", async () => {
-    if (!usuarioAtual) {
-        photoMessage.textContent =
-            "Você precisa estar conectado para salvar.";
-        return;
-    }
-
-    const link = photoUrlInput.value.trim();
-
-    if (link && !validarLinkImagem(link)) {
-        photoMessage.textContent =
-            "O link precisa começar com https://";
-        return;
-    }
-
-    savePhotoBtn.disabled = true;
-    previewPhotoBtn.disabled = true;
-
-    photoMessage.textContent = "Salvando foto...";
-
-    try {
-        if (link) {
-            await new Promise((resolve, reject) => {
-                const imagem = new Image();
-
-                imagem.onload = resolve;
-                imagem.onerror = reject;
-
-                imagem.src = link;
-            });
-        }
-
-        const userRef = doc(db, "users", usuarioAtual.uid);
-
-        await setDoc(userRef, {
-            photoURL: link
-        }, {
-            merge: true
+        await salvarDados({
+            name: nome.trim() || "Jogador",
+            bio: bio.trim(),
+            about: sobre.trim()
         });
 
-        atualizarAvatar(link);
-
-        photoPreview.hidden = true;
-
-        photoMessage.textContent =
-            "Foto de perfil atualizada com sucesso!";
-
-    } catch (error) {
-        console.error("Erro ao salvar foto:", error);
-
-        photoMessage.textContent =
-            "Não foi possível salvar a foto. Verifique o link e tente novamente.";
-
-    } finally {
-        savePhotoBtn.disabled = false;
-        previewPhotoBtn.disabled = false;
+        renderizarPerfil();
+    } catch (erro) {
+        console.error(erro);
+        alert("Não foi possível salvar seu perfil.");
     }
 });
 
-// ATUALIZAR CAPA DO PERFIL
+// FOTO DE PERFIL
+$("#previewPhotoBtn")?.addEventListener("click", () => {
+    const url = imagemSegura($("#photoUrlInput")?.value.trim());
 
-function atualizarCapa(link) {
-    cover.replaceChildren();
-
-    if (!link) {
+    if (!url) {
+        mensagem("#photoMessage", "Insira um link HTTPS válido.");
         return;
     }
 
-    const imagem = document.createElement("img");
-
-    imagem.src = link;
-    imagem.alt = "Capa do perfil";
-    imagem.className = "cover-image";
-    imagem.referrerPolicy = "no-referrer";
-
-    imagem.onerror = () => {
-        imagem.remove();
-    };
-
-    cover.appendChild(imagem);
-}
-
-// VISUALIZAR CAPA ANTES DE SALVAR
-
-previewCoverBtn.addEventListener("click", () => {
-    const link = coverUrlInput.value.trim();
-
-    if (!link) {
-        coverMessage.textContent =
-            "Cole o link de uma imagem primeiro.";
-
-        coverPreview.hidden = true;
-        return;
-    }
-
-    if (!validarLinkImagem(link)) {
-        coverMessage.textContent =
-            "Insira um link válido começando com https://";
-
-        coverPreview.hidden = true;
-        return;
-    }
-
-    coverMessage.textContent = "Carregando imagem...";
-    coverPreview.hidden = true;
-
-    const imagem = new Image();
-
-    imagem.onload = () => {
-        coverPreview.src = link;
-        coverPreview.hidden = false;
-
-        coverMessage.textContent = "Prévia carregada!";
-    };
-
-    imagem.onerror = () => {
-        coverPreview.hidden = true;
-
-        coverMessage.textContent =
-            "Não foi possível carregar essa imagem. Confira o link.";
-    };
-
-    imagem.src = link;
+    const preview = $("#photoPreview");
+    preview.src = url;
+    preview.hidden = false;
+    mensagem("#photoMessage", "Prévia carregada.");
 });
 
-// SALVAR CAPA NO FIRESTORE
+$("#savePhotoBtn")?.addEventListener("click", async () => {
+    const url = imagemSegura($("#photoUrlInput")?.value.trim());
 
-saveCoverBtn.addEventListener("click", async () => {
-    if (!usuarioAtual) {
-        coverMessage.textContent =
-            "Você precisa estar conectado para salvar.";
+    if (!url) {
+        mensagem("#photoMessage", "Insira um link HTTPS válido.");
         return;
     }
-
-    const link = coverUrlInput.value.trim();
-
-    if (link && !validarLinkImagem(link)) {
-        coverMessage.textContent =
-            "O link precisa começar com https://";
-        return;
-    }
-
-    saveCoverBtn.disabled = true;
-    previewCoverBtn.disabled = true;
-
-    coverMessage.textContent = "Salvando capa...";
 
     try {
-        // VERIFICAR SE A IMAGEM CARREGA
-
-        if (link) {
-            await new Promise((resolve, reject) => {
-                const imagem = new Image();
-
-                imagem.onload = resolve;
-                imagem.onerror = reject;
-
-                imagem.src = link;
-            });
-        }
-
-        // SALVAR NO FIRESTORE
-
-        const userRef = doc(db, "users", usuarioAtual.uid);
-
-        await setDoc(userRef, {
-            coverURL: link
-        }, {
-            merge: true
-        });
-
-        atualizarCapa(link);
-
-        coverPreview.hidden = true;
-
-        coverMessage.textContent = link
-            ? "Capa atualizada com sucesso!"
-            : "Capa original restaurada!";
-
-    } catch (error) {
-        console.error("Erro ao salvar capa:", error);
-
-        coverMessage.textContent =
-            "Não foi possível salvar a capa. Verifique o link e tente novamente.";
-
-    } finally {
-        saveCoverBtn.disabled = false;
-        previewCoverBtn.disabled = false;
+        await salvarDados({ photoURL: url });
+        renderizarPerfil();
+        mensagem("#photoMessage", "Foto salva com sucesso!");
+    } catch (erro) {
+        console.error(erro);
+        mensagem("#photoMessage", "Não foi possível salvar a foto.");
     }
 });
 
-// TEMA CLARO E ESCURO
+// CAPA
+$("#previewCoverBtn")?.addEventListener("click", () => {
+    const url = imagemSegura($("#coverUrlInput")?.value.trim());
 
-function atualizarTema() {
-    const claro = document.body.classList.contains("light-mode");
+    if (!url) {
+        mensagem("#coverMessage", "Insira um link HTTPS válido.");
+        return;
+    }
 
-    themeToggle.textContent = claro
-        ? "🌙 Modo escuro"
-        : "☀️ Modo claro";
-}
-
-const temaSalvo = localStorage.getItem("tema");
-
-if (temaSalvo === "claro") {
-    document.body.classList.add("light-mode");
-}
-
-atualizarTema();
-
-themeToggle.addEventListener("click", () => {
-    document.body.classList.toggle("light-mode");
-
-    const temaAtual = document.body.classList.contains("light-mode")
-        ? "claro"
-        : "escuro";
-
-    localStorage.setItem("tema", temaAtual);
-
-    atualizarTema();
+    const preview = $("#coverPreview");
+    preview.src = url;
+    preview.hidden = false;
+    mensagem("#coverMessage", "Prévia carregada.");
 });
 
-// VERIFICAR AUTENTICAÇÃO
+$("#saveCoverBtn")?.addEventListener("click", async () => {
+    const url = imagemSegura($("#coverUrlInput")?.value.trim());
 
-onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        await carregarPerfil(user);
-    } else {
+    if (!url) {
+        mensagem("#coverMessage", "Insira um link HTTPS válido.");
+        return;
+    }
+
+    try {
+        await salvarDados({ coverURL: url });
+        renderizarPerfil();
+        mensagem("#coverMessage", "Capa salva com sucesso!");
+    } catch (erro) {
+        console.error(erro);
+        mensagem("#coverMessage", "Não foi possível salvar a capa.");
+    }
+});
+
+// PREFERÊNCIAS
+$("#savePreferencesBtn")?.addEventListener("click", async () => {
+    const status = $("#statusSelect")?.value || "offline";
+    const platform = $("#platformSelect")?.value || "";
+    const accentColor = $("#accentColor")?.value || "#ff7a18";
+
+    try {
+        await salvarDados({ status, platform, accentColor });
+
+        document.documentElement.style.setProperty("--accent", accentColor);
+
+        renderizarPerfil();
+        mensagem("#preferencesMessage", "Preferências salvas!");
+    } catch (erro) {
+        console.error(erro);
+        mensagem("#preferencesMessage", "Erro ao salvar preferências.");
+    }
+});
+
+// JOGOS FAVORITOS
+function renderizarJogos() {
+    const container = $("#favoriteGames");
+    if (!container) return;
+
+    container.replaceChildren();
+
+    const jogos = Array.isArray(dadosPerfil.favoriteGames)
+        ? dadosPerfil.favoriteGames
+        : [];
+
+    if (!jogos.length) {
+        container.textContent = "Nenhum jogo adicionado.";
+        return;
+    }
+
+    jogos.forEach((jogo, indice) => {
+        const card = document.createElement("div");
+        card.className = "game-card";
+
+        const nome = typeof jogo === "string" ? jogo : jogo.name;
+        const imagem = typeof jogo === "object" ? imagemSegura(jogo.imageURL) : "";
+
+        if (imagem) {
+            const img = document.createElement("img");
+            img.src = imagem;
+            img.alt = nome || "Jogo favorito";
+            img.loading = "lazy";
+            card.appendChild(img);
+        } else {
+            const placeholder = document.createElement("div");
+            placeholder.className = "game-placeholder";
+            placeholder.textContent = "🎮";
+            card.appendChild(placeholder);
+        }
+
+        const titulo = document.createElement("p");
+        titulo.textContent = nome || "Jogo";
+        card.appendChild(titulo);
+
+        const remover = document.createElement("button");
+        remover.type = "button";
+        remover.className = "remove-game";
+        remover.textContent = "×";
+        remover.setAttribute("aria-label", "Remover jogo");
+        remover.addEventListener("click", () => removerJogo(indice));
+
+        card.appendChild(remover);
+        container.appendChild(card);
+    });
+}
+
+$("#addGameBtn")?.addEventListener("click", async () => {
+    if (!dadosPerfil) return;
+
+    const nome = $("#gameNameInput")?.value.trim();
+    const imagemInformada = $("#gameImageInput")?.value.trim();
+
+    if (!nome) {
+        mensagem("#gamesMessage", "Digite o nome do jogo.");
+        return;
+    }
+
+    if (imagemInformada && !imagemSegura(imagemInformada)) {
+        mensagem("#gamesMessage", "O link da imagem precisa ser HTTPS.");
+        return;
+    }
+
+    const jogos = [...(dadosPerfil.favoriteGames || [])];
+
+    jogos.push({
+        name: nome,
+        imageURL: imagemSegura(imagemInformada)
+    });
+
+    try {
+        await salvarDados({ favoriteGames: jogos });
+
+        $("#gameNameInput").value = "";
+        $("#gameImageInput").value = "";
+
+        renderizarJogos();
+        mensagem("#gamesMessage", "Jogo adicionado!");
+    } catch (erro) {
+        console.error(erro);
+        mensagem("#gamesMessage", "Não foi possível adicionar o jogo.");
+    }
+});
+
+async function removerJogo(indice) {
+    const jogos = [...(dadosPerfil.favoriteGames || [])];
+    jogos.splice(indice, 1);
+
+    try {
+        await salvarDados({ favoriteGames: jogos });
+        renderizarJogos();
+        mensagem("#gamesMessage", "Jogo removido.");
+    } catch (erro) {
+        console.error(erro);
+        mensagem("#gamesMessage", "Não foi possível remover o jogo.");
+    }
+}
+
+// EMBLEMAS
+function renderizarEmblemas() {
+    const selecionados = dadosPerfil.badges || [];
+
+    document.querySelectorAll("#badgesList input[type='checkbox']").forEach((checkbox) => {
+        checkbox.checked = selecionados.includes(checkbox.value);
+    });
+}
+
+$("#saveBadgesBtn")?.addEventListener("click", async () => {
+    const badges = Array.from(
+        document.querySelectorAll("#badgesList input[type='checkbox']:checked")
+    ).map((checkbox) => checkbox.value);
+
+    try {
+        await salvarDados({ badges });
+        mensagem("#badgesMessage", "Emblemas salvos!");
+    } catch (erro) {
+        console.error(erro);
+        mensagem("#badgesMessage", "Não foi possível salvar os emblemas.");
+    }
+});
+
+// PUBLICAÇÕES POR LINK DE IMAGEM
+function renderizarPublicacoes() {
+    const container = $("#postsList");
+    if (!container) return;
+
+    container.replaceChildren();
+
+    const posts = Array.isArray(dadosPerfil.posts) ? dadosPerfil.posts : [];
+
+    if (!posts.length) {
+        const vazio = document.createElement("p");
+        vazio.className = "empty-message";
+        vazio.textContent = "Nenhuma publicação ainda.";
+        container.appendChild(vazio);
+        return;
+    }
+
+    [...posts].reverse().forEach((post) => {
+        const artigo = document.createElement("article");
+        artigo.className = "post-card";
+
+        const autor = document.createElement("div");
+        autor.className = "post-author";
+
+        const nomeAutor = document.createElement("strong");
+        nomeAutor.textContent = post.author || dadosPerfil.name || "Jogador";
+        autor.appendChild(nomeAutor);
+
+        const texto = document.createElement("p");
+        texto.className = "post-text";
+        texto.textContent = post.text || "";
+
+        artigo.append(autor, texto);
+
+        const imagemUrl = imagemSegura(post.imageURL);
+
+        if (imagemUrl) {
+            const imagem = document.createElement("img");
+            imagem.className = "post-image";
+            imagem.src = imagemUrl;
+            imagem.alt = "Imagem da publicação";
+            imagem.loading = "lazy";
+            artigo.appendChild(imagem);
+        }
+
+        container.appendChild(artigo);
+    });
+}
+
+$("#publishPostBtn")?.addEventListener("click", async () => {
+    if (!dadosPerfil) return;
+
+    const texto = $("#postTextInput")?.value.trim();
+    const imagemInformada = $("#postImageInput")?.value.trim();
+
+    if (!texto && !imagemInformada) {
+        mensagem("#postMessage", "Escreva algo ou adicione um link de imagem.");
+        return;
+    }
+
+    if (imagemInformada && !imagemSegura(imagemInformada)) {
+        mensagem("#postMessage", "O link da imagem precisa ser HTTPS.");
+        return;
+    }
+
+    const posts = [...(dadosPerfil.posts || [])];
+
+    posts.push({
+        text: texto,
+        imageURL: imagemSegura(imagemInformada),
+        author: dadosPerfil.name || "Jogador",
+        createdAt: new Date().toISOString()
+    });
+
+    try {
+        await salvarDados({
+            posts,
+            postsCount: posts.length
+        });
+
+        $("#postTextInput").value = "";
+        $("#postImageInput").value = "";
+
+        renderizarPublicacoes();
+        atualizarTexto("#postsCount", posts.length);
+        mensagem("#postMessage", "Publicação criada!");
+    } catch (erro) {
+        console.error(erro);
+        mensagem("#postMessage", "Não foi possível publicar.");
+    }
+});
+
+// TEMA
+const themeToggle = $("#themeToggle");
+
+function aplicarTema(tema) {
+    document.body.classList.toggle("light-theme", tema === "light");
+
+    if (themeToggle) {
+        themeToggle.textContent = tema === "light"
+            ? "🌙 Modo escuro"
+            : "☀️ Modo claro";
+    }
+}
+
+const temaSalvo = localStorage.getItem("tema") || "dark";
+aplicarTema(temaSalvo);
+
+themeToggle?.addEventListener("click", () => {
+    const novoTema = document.body.classList.contains("light-theme")
+        ? "dark"
+        : "light";
+
+    localStorage.setItem("tema", novoTema);
+    aplicarTema(novoTema);
+});
+
+// SAIR
+$("#logoutBtn")?.addEventListener("click", async () => {
+    try {
+        await signOut(auth);
         window.location.replace("index.html");
+    } catch (erro) {
+        console.error(erro);
+        alert("Não foi possível sair da conta.");
     }
 });
+
+// AUTENTICAÇÃO
+async function iniciarAutenticacao() {
+    try {
+        await setPersistence(auth, browserLocalPersistence);
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                // Só redireciona depois da verificação inicial do Firebase.
+                if (!perfilCarregado) {
+                    window.location.replace("index.html");
+                }
+                return;
+            }
+
+            usuarioAtual = user;
+
+            try {
+                await carregarPerfil(user);
+            } catch (erro) {
+                console.error("Erro ao carregar perfil:", erro);
+                alert("Não foi possível carregar os dados do perfil. Verifique as regras do Firestore.");
+            }
+        });
+    } catch (erro) {
+        console.error("Erro ao iniciar autenticação:", erro);
+        alert("Não foi possível verificar sua sessão. Confira a configuração do Firebase.");
+    }
+}
+
+iniciarAutenticacao();

@@ -3,128 +3,167 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebas
 
 import {
     getAuth,
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword
+    setPersistence,
+    browserLocalPersistence,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword
 } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
 
 import {
     getFirestore,
     doc,
-    setDoc
+    setDoc,
+    serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
-// FIREBASE
 const firebaseConfig = {
-    apiKey: "AIzaSyDdGZsfDOqY7xqI_Nd4pUc52PkXH0Hjt0g",
-    authDomain: "meetq-9b370.firebaseapp.com",
-    projectId: "meetq-9b370",
-    storageBucket: "meetq-9b370.firebasestorage.app",
-    messagingSenderId: "889397323612",
-    appId: "1:889397323612:web:fb375053f9cb15e7168399"
+  apiKey: "AIzaSyDdGZsfDOqY7xqI_Nd4pUc52PkXH0Hjt0g",
+  authDomain: "meetq-9b370.firebaseapp.com",
+  projectId: "meetq-9b370",
+  storageBucket: "meetq-9b370.firebasestorage.app",
+  messagingSenderId: "889397323612",
+  appId: "1:889397323612:web:fb375053f9cb15e7168399"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// ELEMENTOS
-const btnCadastro = document.getElementById("btnCadastro");
-const btnLogin = document.getElementById("loginBtn");
+const authReady = setPersistence(auth, browserLocalPersistence);
 
-const emailInput = document.getElementById("email");
-const senhaInput = document.getElementById("senha");
-const erro = document.getElementById("erro");
+function mostrarErro(mensagem) {
+    const erro = document.querySelector("#erro");
 
-// CADASTRO
-if (btnCadastro) {
-    btnCadastro.addEventListener("click", async (event) => {
-        event.preventDefault();
+    if (erro) {
+        erro.textContent = mensagem;
+    } else {
+        alert(mensagem);
+    }
+}
 
-        const email = emailInput.value.trim();
-        const senha = senhaInput.value;
-
-        erro.textContent = "";
-
-        if (!email || !senha) {
-            erro.textContent = "Preencha o email e a senha.";
-            return;
-        }
-
-        try {
-            const userCredential =
-                await createUserWithEmailAndPassword(
-                    auth,
-                    email,
-                    senha
-                );
-
-            await setDoc(
-                doc(db, "users", userCredential.user.uid),
-                {
-                    email: email,
-                    displayName: email.split("@")[0],
-                    bio: "",
-                    about: "",
-                    favoriteGames: [],
-                    postsCount: 0,
-                    friendsCount: 0,
-                    eventsCount: 0,
-                    createdAt: Date.now()
-                }
-            );
-
-            alert("Conta criada com sucesso!");
-            window.location.href = "index.html";
-
-        } catch (error) {
-            console.error("Erro no cadastro:", error);
-            erro.textContent = error.message;
-        }
-    });
+function limparErro() {
+    const erro = document.querySelector("#erro");
+    if (erro) erro.textContent = "";
 }
 
 // LOGIN
-if (btnLogin) {
-    btnLogin.addEventListener("click", async (event) => {
-        event.preventDefault();
+async function fazerLogin() {
+    limparErro();
 
-        const email = emailInput.value.trim();
-        const senha = senhaInput.value;
+    const email = document.querySelector("#email")?.value.trim();
+    const senha = document.querySelector("#senha")?.value;
 
-        erro.textContent = "";
+    if (!email || !senha) {
+        mostrarErro("Preencha seu e-mail e sua senha.");
+        return;
+    }
 
-        if (!email || !senha) {
-            erro.textContent = "Preencha o email e a senha.";
-            return;
-        }
+    const botao = document.querySelector("#loginBtn");
+    if (botao) botao.disabled = true;
 
-        btnLogin.disabled = true;
-        btnLogin.textContent = "Entrando...";
+    try {
+        await authReady;
 
-        try {
-            await signInWithEmailAndPassword(
-                auth,
-                email,
-                senha
-            );
+        await signInWithEmailAndPassword(auth, email, senha);
 
-            window.location.href = "home.html";
+        window.location.href = "home.html";
+    } catch (erro) {
+        console.error("Erro no login:", erro);
 
-        } catch (error) {
-            console.error("Erro no login:", error);
+        const mensagens = {
+            "auth/invalid-credential": "E-mail ou senha incorretos.",
+            "auth/user-not-found": "Usuário não encontrado.",
+            "auth/wrong-password": "Senha incorreta.",
+            "auth/invalid-email": "Digite um e-mail válido.",
+            "auth/too-many-requests": "Muitas tentativas. Tente novamente mais tarde."
+        };
 
-            if (
-                error.code === "auth/invalid-credential" ||
-                error.code === "auth/wrong-password" ||
-                error.code === "auth/user-not-found"
-            ) {
-                erro.textContent = "Email ou senha incorretos.";
-            } else {
-                erro.textContent = "Erro ao entrar: " + error.message;
-            }
+        mostrarErro("Erro: " + erro.code + " | " + erro.message);
+    } finally {
+        if (botao) botao.disabled = false;
+    }
+}
 
-            btnLogin.disabled = false;
-            btnLogin.textContent = "Entrar";
-        }
+const loginBtn = document.querySelector("#loginBtn");
+
+if (loginBtn) {
+    loginBtn.addEventListener("click", fazerLogin);
+}
+
+// Também permite pressionar Enter nos campos de login.
+const senhaLogin = document.querySelector("#senha");
+
+if (senhaLogin) {
+    senhaLogin.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") fazerLogin();
     });
+}
+
+// CADASTRO
+// IDs esperados na página registro.html:
+// #nome, #email, #senha e #registerBtn.
+async function fazerCadastro() {
+    limparErro();
+
+    const nome = document.querySelector("#nome")?.value.trim();
+    const email = document.querySelector("#email")?.value.trim();
+    const senha = document.querySelector("#senha")?.value;
+
+    if (!nome || !email || !senha) {
+        mostrarErro("Preencha todos os campos.");
+        return;
+    }
+
+    const botao = document.querySelector("#registerBtn");
+    if (botao) botao.disabled = true;
+
+    try {
+        await authReady;
+
+        const resultado = await createUserWithEmailAndPassword(
+            auth,
+            email,
+            senha
+        );
+
+        await setDoc(doc(db, "users", resultado.user.uid), {
+            uid: resultado.user.uid,
+            name: nome,
+            email: resultado.user.email,
+            bio: "",
+            about: "",
+            photoURL: "",
+            coverURL: "",
+            status: "offline",
+            platform: "",
+            accentColor: "#ff7a18",
+            favoriteGames: [],
+            badges: [],
+            posts: [],
+            postsCount: 0,
+            friendsCount: 0,
+            eventsCount: 0,
+            createdAt: serverTimestamp()
+        });
+
+        window.location.href = "home.html";
+    } catch (erro) {
+        console.error("Erro no cadastro:", erro);
+
+        const mensagens = {
+            "auth/email-already-in-use": "Este e-mail já está cadastrado.",
+            "auth/invalid-email": "Digite um e-mail válido.",
+            "auth/weak-password": "A senha precisa ter pelo menos 6 caracteres."
+        };
+
+        mostrarErro(mensagens[erro.code] || "Não foi possível criar sua conta.");
+    } finally {
+        if (botao) botao.disabled = false;
+    }
+}
+
+const registerBtn = document.querySelector("#registerBtn");
+
+if (registerBtn) {
+    registerBtn.addEventListener("click", fazerCadastro);
 }
